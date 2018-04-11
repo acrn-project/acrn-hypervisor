@@ -603,6 +603,10 @@ struct virtio_vq_info {
 	uint32_t gpa_avail[2];	/**< gpa of avail_ring */
 	uint32_t gpa_used[2];	/**< gpa of used_ring */
 	bool enabled;		/**< whether the virtqueue is enabled */
+
+	/*FIXME: remove me after switch to vhost kernel notify. */
+	int32_t call;
+	int32_t kick;
 };
 
 /* as noted above, these are sort of backwards, name-wise */
