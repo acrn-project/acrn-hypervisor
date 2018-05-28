@@ -850,6 +850,7 @@ bad:
 				name, (int)value);
 		break;
 	case VIRTIO_CR_STATUS:
+		printf("legacy set status=%ld\n", value);
 		base->status = value;
 		if (vops->set_status)
 			(*vops->set_status)(DEV_STRUCT(base), value);
@@ -1225,6 +1226,7 @@ virtio_common_cfg_write(struct pci_vdev *dev, uint64_t offset, int size,
 		base->msix_cfg_idx = value;
 		break;
 	case VIRTIO_COMMON_STATUS:
+		printf("modern set status=%ld\n", value);
 		base->status = value & 0xff;
 		if (vops->set_status)
 			(*vops->set_status)(DEV_STRUCT(base), value);

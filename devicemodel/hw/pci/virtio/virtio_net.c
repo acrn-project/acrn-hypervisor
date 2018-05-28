@@ -126,6 +126,12 @@ struct virtio_net_rxhdr {
 static int virtio_net_debug;
 #define DPRINTF(params) do { if (virtio_net_debug) printf params; } while (0)
 #define WPRINTF(params) (printf params)
+#define VNETPRT(fmt,...) \
+	do { \
+		printf("vnet[%s, %d]: " fmt, \
+		__FUNCTION__, __LINE__, ##__VA_ARGS__); \
+	} while(0)
+
 
 /*
  * Per-device struct
@@ -148,7 +154,9 @@ struct virtio_net {
 
 	struct virtio_net_config config;
 
+	pthread_t	rx_tid;
 	pthread_mutex_t	rx_mtx;
+	pthread_cond_t	rx_cond;
 	int		rx_in_progress;
 	int		rx_vhdrlen;
 	int		rx_merge;	/* merged rx bufs in use */
@@ -625,12 +633,11 @@ virtio_net_rx_callback(int fd, enum ev_type type, void *param)
 {
 	struct virtio_net *net = param;
 
+	/* Signal the tx thread for processing */
 	pthread_mutex_lock(&net->rx_mtx);
-	net->rx_in_progress = 1;
-	net->virtio_net_rx(net);
-	net->rx_in_progress = 0;
+	if (net->rx_in_progress == 0)
+		pthread_cond_signal(&net->rx_cond);
 	pthread_mutex_unlock(&net->rx_mtx);
-
 }
 
 static void
@@ -693,6 +700,29 @@ virtio_net_ping_txq(void *vdev, struct virtio_vq_info *vq)
 	if (net->tx_in_progress == 0)
 		pthread_cond_signal(&net->tx_cond);
 	pthread_mutex_unlock(&net->tx_mtx);
+}
+
+/*
+ * Thread which will handle processing of TX desc
+ */
+static void *
+virtio_net_rx_thread(void *param)
+{
+	struct virtio_net *net = param;
+	int error;
+
+	for (;;) {
+		pthread_mutex_lock(&net->rx_mtx);
+		net->rx_in_progress = 0;
+
+		error = pthread_cond_wait(&net->rx_cond, &net->rx_mtx);
+		assert(error == 0);
+
+		net->rx_in_progress = 1;
+		pthread_mutex_unlock(&net->rx_mtx);
+
+		net->virtio_net_rx(net);
+	}
 }
 
 /*
@@ -1019,6 +1049,12 @@ virtio_net_init(struct vmctx *ctx, struct pci_vdev *dev, char *opts)
 	net->rx_vhdrlen = sizeof(struct virtio_net_rxhdr);
 	net->rx_in_progress = 0;
 	pthread_mutex_init(&net->rx_mtx, NULL);
+	pthread_cond_init(&net->rx_cond, NULL);
+	pthread_create(&net->rx_tid, NULL, virtio_net_rx_thread,
+		       (void *)net);
+	snprintf(tname, sizeof(tname), "vtnet-%d:%d rx", dev->slot,
+		 dev->func);
+	pthread_setname_np(net->rx_tid, tname);
 
 	/*
 	 * Initialize tx semaphore & spawn TX processing thread.
