@@ -57,6 +57,8 @@
 #include <net/if.h>
 #include <linux/if_tun.h>
 
+#define IFF_NAPI	0x0010
+
 #define VIRTIO_NET_RINGSZ	1024
 #define VIRTIO_NET_MAXSEGS	256
 
@@ -807,7 +809,7 @@ virtio_net_tap_open(char *devname)
 	}
 
 	memset(&ifr, 0, sizeof(ifr));
-	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
+	ifr.ifr_flags = IFF_TAP | IFF_NO_PI | IFF_NAPI;
 
 	if (*devname)
 		strncpy(ifr.ifr_name, devname, IFNAMSIZ);
