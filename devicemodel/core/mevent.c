@@ -45,6 +45,8 @@
 #include <sys/time.h>
 #include <sys/epoll.h>
 #include <sys/queue.h>
+#include <sys/resource.h>
+#include <sys/syscall.h>
 #include <pthread.h>
 
 #include "mevent.h"
@@ -301,9 +303,12 @@ mevent_dispatch(void)
 
 	struct mevent *pipev;
 	int ret;
+	pid_t tid;
 
 	mevent_tid = pthread_self();
 	mevent_set_name();
+	tid = syscall(__NR_gettid);
+	setpriority(PRIO_PROCESS, tid, -20);
 
 	/*
 	 * Open the pipe that will be used for other threads to force
