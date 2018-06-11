@@ -730,3 +730,15 @@ vm_get_cpu_state(struct vmctx *ctx, void *state_buf)
 {
 	return ioctl(ctx->fd, IC_PM_GET_CPU_STATE, state_buf);
 }
+
+int
+vm_ioeventfd(struct vmctx *ctx, struct acrn_ioeventfd *args)
+{
+	return ioctl(ctx->fd, IC_EVENT_IOEVENTFD, args);
+}
+
+int
+vm_irqfd(struct vmctx *ctx, struct acrn_irqfd *args)
+{
+	return ioctl(ctx->fd, IC_EVENT_IRQFD, args);
+}

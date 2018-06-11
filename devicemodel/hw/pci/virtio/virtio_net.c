@@ -659,6 +659,7 @@ virtio_net_ping_rxq(void *vdev, struct virtio_vq_info *vq)
 	}
 }
 
+#if NOACRN_EVENTFD
 static void
 virtio_net_proctx(struct virtio_net *net, struct virtio_vq_info *vq)
 {
@@ -687,6 +688,7 @@ virtio_net_proctx(struct virtio_net *net, struct virtio_vq_info *vq)
 	/* chain is processed, release it and set tlen */
 	vq_relchain(vq, idx, tlen);
 }
+#endif
 
 static void
 virtio_net_ping_txq(void *vdev, struct virtio_vq_info *vq)
@@ -762,6 +764,7 @@ virtio_net_ping_txq(void *vdev, struct virtio_vq_info *vq)
 /*
  * Thread which will handle processing of TX desc
  */
+#if NOACRN_EVENTFD
 static void *
 virtio_net_tx_thread(void *param)
 {
@@ -823,6 +826,7 @@ virtio_net_tx_thread(void *param)
 		pthread_mutex_lock(&net->tx_mtx);
 	}
 }
+#endif
 
 #ifdef notyet
 static void
@@ -924,6 +928,7 @@ virtio_net_tap_setup(struct virtio_net *net, char *devname)
 		net->tapfd = -1;
 	}
 
+#if 0
 	net->mevp = mevent_add(net->tapfd, EVF_READ,
 			       virtio_net_rx_callback, net);
 	if (net->mevp == NULL) {
@@ -931,6 +936,7 @@ virtio_net_tap_setup(struct virtio_net *net, char *devname)
 		close(net->tapfd);
 		net->tapfd = -1;
 	}
+#endif
 
 	int vhostfd = open("/dev/vhost-net", O_RDWR);
 	if (vhostfd < 0) {
@@ -974,7 +980,7 @@ virtio_net_init(struct vmctx *ctx, struct pci_vdev *dev, char *opts)
 	MD5_CTX mdctx;
 	unsigned char digest[16];
 	char nstr[80];
-	char tname[MAXCOMLEN + 1];
+//	char tname[MAXCOMLEN + 1];
 	struct virtio_net *net;
 	char *devname;
 	char *vtopts;
@@ -1104,6 +1110,7 @@ virtio_net_init(struct vmctx *ctx, struct pci_vdev *dev, char *opts)
 	 * As of now, only one thread for TX desc processing is
 	 * spawned.
 	 */
+	/*
 	net->tx_in_progress = 0;
 	pthread_mutex_init(&net->tx_mtx, NULL);
 	pthread_cond_init(&net->tx_cond, NULL);
@@ -1112,6 +1119,7 @@ virtio_net_init(struct vmctx *ctx, struct pci_vdev *dev, char *opts)
 	snprintf(tname, sizeof(tname), "vtnet-%d:%d tx", dev->slot,
 		 dev->func);
 	pthread_setname_np(net->tx_tid, tname);
+	*/
 
 	net->vhost_ready = 0;
 
@@ -1197,6 +1205,8 @@ int vhost_net_stop(struct virtio_net *net, int num_of_queues)
 	return 0;
 }
 
+#define NOACRN_EVENTFD 0
+#if NOACRN_EVENTFD
 int vhost_net_rx_callfd_check(int32_t callfd)
 {
 	int ret = 0;
@@ -1250,6 +1260,7 @@ vhost_net_rx_callfd_thread(void *param)
 
 	return NULL;
 }
+#endif
 
 static void
 vhost_net_set_status(void *vdev, uint64_t status)
@@ -1270,8 +1281,10 @@ vhost_net_set_status(void *vdev, uint64_t status)
 
 		/* start RX callfd thread. this will cause performance issue when booting UOS, need switch to vhm
 		 * polling mode. */
-		if(1)
+#if NOACRN_EVENTFD
+		if(0)
 			pthread_create(&net->rx_callfd_tid, NULL, vhost_net_rx_callfd_thread, (void *)net);
+#endif
 
 		net->vhost_ready = 1;
 	} else {
@@ -1304,9 +1317,10 @@ virtio_net_deinit(struct vmctx *ctx, struct pci_vdev *dev, char *opts)
 			net->tapfd = -1;
 		} else
 			fprintf(stderr, "net->tapfd is -1!\n");
-
+#if 0
 		if (net->mevp != NULL)
 			mevent_delete(net->mevp);
+#endif
 
 		free(net);
 

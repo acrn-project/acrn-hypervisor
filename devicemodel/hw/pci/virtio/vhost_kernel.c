@@ -91,10 +91,31 @@ int vhost_set_vring_call(struct vhost_dev *vdev, struct vhost_vring_file *file)
 
 int set_vring_state(struct vhost_dev *vdev, struct virtio_vq_info *virtq, int index)
 {
+    struct acrn_ioeventfd ioeventfd = {0};
+    struct acrn_irqfd irqfd = {0};
+    struct msix_table_entry *mte;
+    struct acrn_msi_entry msi;
+
     virtq->kick = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     virtq->call = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     assert(virtq->kick >= 0);
     assert(virtq->call >= 0);
+
+    ioeventfd.datamatch = index;
+    ioeventfd.addr = vdev->base->dev->bar[0].addr + VIRTIO_CR_QNOTIFY;
+    ioeventfd.len = 2;
+    ioeventfd.flags = ACRN_IOEVENTFD_FLAG_DATAMATCH | ACRN_IOEVENTFD_FLAG_PIO;
+    ioeventfd.fd = virtq->kick;
+    printf("lskakaxi, ioeventfd fd[%d] addr[%lx] len[%d]\n\r", virtq->kick, ioeventfd.addr, ioeventfd.len);
+    vm_ioeventfd(vdev->base->dev->vmctx, &ioeventfd);
+
+    mte = &vdev->base->dev->msix.table[virtq->msix_idx];
+    msi.msi_addr = mte->addr;
+    msi.msi_data = mte->msg_data;
+    irqfd.fd = virtq->call;
+    irqfd.flags = ACRN_IRQFD_FLAG_MSI;
+    irqfd.irq.msi = msi;
+    vm_irqfd(vdev->base->dev->vmctx, &irqfd);
 
     struct vhost_vring_state num = { .index = index, .num = virtq->qsize };
     struct vhost_vring_state base = { .index = index, .num = 0 };

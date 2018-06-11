@@ -160,5 +160,8 @@ int	vm_create_vcpu(struct vmctx *ctx, int vcpu_id);
 
 int	vm_get_cpu_state(struct vmctx *ctx, void *state_buf);
 
+int	vm_ioeventfd(struct vmctx *ctx, struct acrn_ioeventfd *args);
+int	vm_irqfd(struct vmctx *ctx, struct acrn_irqfd *args);
+
 extern bool hugetlb;
 #endif	/* _VMMAPI_H_ */
