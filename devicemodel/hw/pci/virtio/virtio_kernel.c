@@ -11,7 +11,7 @@
 #include <sys/ioctl.h>
 #include "virtio_kernel.h"
 
-static int virtio_kernel_debug;
+static int virtio_kernel_debug = 1;
 #define DPRINTF(params) do { if (virtio_kernel_debug) printf params; } while (0)
 #define WPRINTF(params) (printf params)
 
