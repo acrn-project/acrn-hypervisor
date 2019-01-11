@@ -50,6 +50,8 @@
 
 static uint8_t virtio_poll_enabled;
 static size_t virtio_poll_interval;
+static size_t virtio_net_notify_number;
+static struct acrn_timer virtio_net_notify_timer;
 
 static void
 virtio_start_timer(struct acrn_timer *timer, time_t sec, time_t nsec)
@@ -63,6 +65,15 @@ virtio_start_timer(struct acrn_timer *timer, time_t sec, time_t nsec)
 	ts.it_value.tv_sec = sec;
 	ts.it_value.tv_nsec = nsec;
 	assert(acrn_timer_settime(timer, &ts) == 0);
+}
+
+static void
+virtio_net_notify_handler(void *arg)
+{
+	fprintf(stderr, "net_no_nu=%ld\r\n", virtio_net_notify_number);
+	/* FIXME: should lock the resource */
+	virtio_net_notify_number = 0;
+	virtio_start_timer(&virtio_net_notify_timer, 1, 0);
 }
 
 static void
@@ -949,6 +960,9 @@ bad:
 			goto done;
 		}
 		vq = &base->queues[value];
+		if (strncmp(name, "vtnet", 5) == 0) {
+			virtio_net_notify_number++;
+		}
 		if (vq->notify)
 			(*vq->notify)(DEV_STRUCT(base), vq);
 		else if (vops->qnotify)
@@ -974,6 +988,12 @@ bad:
 			 * FIXME: Need optimization in the future
 			 */
 			virtio_start_timer(&base->polling_timer, 5, 0);
+		}
+		if ((value & VIRTIO_CONFIG_S_DRIVER_OK) &&
+		     strncmp(name, "vtnet", 5) == 0) {
+		     virtio_net_notify_timer.clockid = CLOCK_MONOTONIC;
+		     acrn_timer_init(&virtio_net_notify_timer, virtio_net_notify_handler, base);
+		     virtio_start_timer(&virtio_net_notify_timer, 1, 0);
 		}
 		break;
 	case VIRTIO_MSI_CONFIG_VECTOR:
