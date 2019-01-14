@@ -537,6 +537,7 @@ virtio_net_tx_thread(void *param)
 	struct virtio_net *net = param;
 	struct virtio_vq_info *vq;
 	int error;
+	int flag;
 
 	vq = &net->queues[VIRTIO_NET_TXQ];
 
@@ -574,7 +575,7 @@ virtio_net_tx_thread(void *param)
 		vq->used->flags |= VRING_USED_F_NO_NOTIFY;
 		net->tx_in_progress = 1;
 		pthread_mutex_unlock(&net->tx_mtx);
-
+#if 0
 		do {
 			/*
 			 * Run through entries, placing them into
@@ -583,6 +584,24 @@ virtio_net_tx_thread(void *param)
 			 */
 			virtio_net_proctx(net, vq);
 		} while (vq_has_descs(vq));
+#endif
+		flag = 1;
+		while (1) {
+			if (vq_has_descs(vq)) {
+				virtio_net_proctx(net, vq);
+				flag = 1;
+			}
+			else {
+				if (flag) {
+					flag = 0;
+					usleep(10);
+					continue;
+				}
+				else {
+					break;
+				}
+			}
+		}
 
 		/*
 		 * Generate an interrupt if needed.
