@@ -16,6 +16,7 @@
 #include <vm.h>
 #include <trace.h>
 #include <logmsg.h>
+#include <dump.h>
 
 #define EXCEPTION_ERROR_CODE_VALID  8U
 
@@ -490,7 +491,10 @@ int32_t exception_vmexit_handler(struct acrn_vcpu *vcpu)
 	uint32_t cpl;
 	int32_t status = 0;
 
-	pr_dbg(" Handling guest exception");
+	if (is_sos_vm(vcpu->vm))
+		pr_err(" Handling guest exception sos\n");
+	else
+		pr_err(" Handling guest exception win\n");
 
 	/* Obtain VM-Exit information field pg 2912 */
 	intinfo = exec_vmread32(VMX_EXIT_INT_INFO);
@@ -524,6 +528,15 @@ int32_t exception_vmexit_handler(struct acrn_vcpu *vcpu)
 		/* just print error message for #MC, it then will be injected
 		 * back to guest */
 		pr_fatal("Exception #MC got from guest!");
+	}
+
+	if (!is_sos_vm(vcpu->vm)) {
+		pr_err("win exception\n");
+		if (exception_vector == IDT_AC) {
+			pr_err("\n");
+			pr_err("Exit Reason: 0x%016llx ", vcpu->arch.exit_reason);
+			debug_dump_guest_cpu_regs(vcpu);
+		}
 	}
 
 	TRACE_4I(TRACE_VMEXIT_EXCEPTION_OR_NMI,
