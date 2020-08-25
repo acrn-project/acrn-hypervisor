@@ -261,6 +261,32 @@ void dump_exception(struct intr_excp_ctx *ctx, uint16_t pcpu_id)
 	spinlock_release(&exception_spinlock);
 }
 
+#define LINE_NUM 8
+#define LINE_LEN 8
+#define DUMP_SIZE (2*LINE_NUM*LINE_LEN)
+static void dump_mem(struct acrn_vcpu *vcpu)
+{
+	int i;
+	char tmp[DUMP_SIZE];
+	uint32_t err_code = 0U;
+	uint64_t fault_addr;
+	char *a;
+
+	if (copy_from_gva(vcpu, tmp, (exec_vmread(VMX_GUEST_RIP) - LINE_NUM * LINE_LEN),
+		DUMP_SIZE, &err_code, &fault_addr) < 0) {
+		pr_err("error dump_mem");
+		return;
+	}
+
+	a = tmp;
+
+	for (i = 0; i < 2 * LINE_NUM; i++)
+	{
+		pr_err("%02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx", *a, *(a+1),*(a+2),*(a+3),*(a+4),*(a+5),*(a+6),*(a+7));
+		a += 8;
+	}
+}
+
 /* for debug purpose */
 void debug_dump_guest_cpu_regs(struct acrn_vcpu *vcpu)
 {
@@ -276,6 +302,9 @@ void debug_dump_guest_cpu_regs(struct acrn_vcpu *vcpu)
 	pr_err("D: =  RIP   =0x%016llx (L:0x%016llx)  , RFLAGS=0x%016llx", exec_vmread(VMX_GUEST_RIP),
 			exec_vmread(VMX_GUEST_CS_BASE)+ exec_vmread(VMX_GUEST_RIP),
 			exec_vmread(VMX_GUEST_RFLAGS));
+
+	pr_err("D: inst: ");
+	dump_mem(vcpu);
 	pr_err("D: =  CR0   =0x%016llx  , CR2   =0x%016llx", exec_vmread(VMX_GUEST_CR0), vcpu_get_cr2(vcpu));
 	pr_err("D: =  CR3   =0x%016llx  , CR4   =0x%016llx", exec_vmread(VMX_GUEST_CR3), exec_vmread(VMX_GUEST_CR4));
 	pr_err("D: =  EFER  =0x%016llx  , DR7   =0x%016llx", exec_vmread(VMX_GUEST_IA32_EFER_FULL), exec_vmread64(VMX_GUEST_DR7));
