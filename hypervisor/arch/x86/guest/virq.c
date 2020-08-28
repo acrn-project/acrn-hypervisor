@@ -310,6 +310,13 @@ void vcpu_inject_ss(struct acrn_vcpu *vcpu)
 int32_t interrupt_window_vmexit_handler(struct acrn_vcpu *vcpu)
 {
 	uint32_t value32;
+	uint16_t i;
+	struct acrn_vcpu *other;
+
+	uint8_t inst[8];
+	uint32_t err_code = 0U;
+	uint64_t fault_addr;
+	int32_t status = 0;
 
 	TRACE_2L(TRACE_VMEXIT_INTERRUPT_WINDOW, 0UL, 0UL);
 
@@ -322,6 +329,26 @@ int32_t interrupt_window_vmexit_handler(struct acrn_vcpu *vcpu)
 	exec_vmwrite32(VMX_PROC_VM_EXEC_CONTROLS, value32);
 
 	vcpu_retain_rip(vcpu);
+
+	if ((vcpu->arch.split_lock_ac_step_mode) && (vcpu->vm->hw.created_vcpus > 1U)) {
+		foreach_vcpu(i, vcpu->vm, other) {
+			if (other != vcpu) {
+				pr_err("AC splitlock signal ");
+				signal_event(&other->events[VCPU_EVENT_SPLIT_LOCK]);
+			}
+		}
+		vcpu->arch.split_lock_ac_step_mode = false;
+
+		status = copy_from_gva(vcpu, inst, exec_vmread(VMX_GUEST_RIP), 8U, &err_code, &fault_addr);
+		if (status < 0) {
+			pr_fatal("Error copy instruction from Guest!");
+		}
+		pr_err("RIP = 0x%016llx", exec_vmread(VMX_GUEST_RIP));
+		pr_err("skiped inst: %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx",
+		       inst[0],inst[1],inst[2],inst[3],inst[4],inst[5],inst[6],inst[7]);
+	}
+	pr_err("interrupt_window called ");
+
 	return 0;
 }
 
@@ -376,6 +403,10 @@ int32_t acrn_handle_pending_request(struct acrn_vcpu *vcpu)
 	} else {
 		if (bitmap_test_and_clear_lock(ACRN_REQUEST_WAIT_WBINVD, pending_req_bits)) {
 			wait_event(&vcpu->events[VCPU_EVENT_SYNC_WBINVD]);
+		}
+		if (bitmap_test_and_clear_lock(ACRN_REQUEST_SPLIT_LOCK, pending_req_bits)) {
+			pr_err("AC lock waiting vcpu_id %u vm %u", vcpu->vcpu_id, vcpu->vm->vm_id);
+			wait_event(&vcpu->events[VCPU_EVENT_SPLIT_LOCK]);
 		}
 
 		if (bitmap_test_and_clear_lock(ACRN_REQUEST_EPT_FLUSH, pending_req_bits)) {
@@ -449,7 +480,8 @@ int32_t acrn_handle_pending_request(struct acrn_vcpu *vcpu)
 			 */
 			if (bitmap_test(ACRN_REQUEST_EXTINT, pending_req_bits) ||
 				bitmap_test(ACRN_REQUEST_NMI, pending_req_bits) ||
-				vlapic_has_pending_delivery_intr(vcpu)) {
+				vlapic_has_pending_delivery_intr(vcpu) ||
+				arch->split_lock_ac_step_mode) {
 				tmp = exec_vmread32(VMX_PROC_VM_EXEC_CONTROLS);
 				tmp |= VMX_PROCBASED_CTLS_IRQ_WIN;
 				exec_vmwrite32(VMX_PROC_VM_EXEC_CONTROLS, tmp);
@@ -489,6 +521,13 @@ int32_t exception_vmexit_handler(struct acrn_vcpu *vcpu)
 	uint32_t exception_vector = VECTOR_INVALID;
 	uint32_t cpl;
 	int32_t status = 0;
+	uint64_t val;
+	uint64_t ac_enabled;
+	uint16_t i;
+	struct acrn_vcpu *other;
+	uint8_t inst[8];
+	uint32_t err_code = 0U;
+	uint64_t fault_addr;
 
 	pr_dbg(" Handling guest exception");
 
@@ -515,10 +554,46 @@ int32_t exception_vmexit_handler(struct acrn_vcpu *vcpu)
 		}
 	}
 
-	/* Handle all other exceptions */
-	vcpu_retain_rip(vcpu);
+	val = vcpu_get_guest_msr(vcpu, MSR_TEST_CTL);
+	ac_enabled = (val & (1U << 29U));
 
-	status = vcpu_queue_exception(vcpu, exception_vector, int_err_code);
+	if ((exception_vector != IDT_AC) ||
+	    (is_sos_vm(vcpu->vm)) ||
+	    ((exception_vector == IDT_AC) && ac_enabled)) {
+		/* Handle all other exceptions */
+		vcpu_retain_rip(vcpu);
+		status = vcpu_queue_exception(vcpu, exception_vector, int_err_code);
+		pr_err("Not AC or Not WaaG. vcpu_id %u vcpu_num %u vm %u", vcpu->vcpu_id, (vcpu->vm->hw.created_vcpus), vcpu->vm->vm_id);
+	} else {
+		if (vcpu->vm->hw.created_vcpus > 1U) {
+			pr_err("WaaG AC on vcpu_id %u vcpu_num %u vm %u", vcpu->vcpu_id, (vcpu->vm->hw.created_vcpus), vcpu->vm->vm_id);
+			foreach_vcpu(i, vcpu->vm, other) {
+				if (other != vcpu) {
+					pr_err("WaaG request vcpu_id = %u to root mode", other->vcpu_id);
+					vcpu_make_request(other, ACRN_REQUEST_SPLIT_LOCK);
+				}
+			}
+			vcpu->arch.split_lock_ac_step_mode = true;
+		}
+
+		status = copy_from_gva(vcpu, inst, exec_vmread(VMX_GUEST_RIP), 8U, &err_code, &fault_addr);
+		if (status < 0) {
+			pr_fatal("Error copy instruction from Guest!");
+		}
+
+		pr_err("RIP = 0x%016llx", exec_vmread(VMX_GUEST_RIP));
+		pr_err("lock inst found: %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx",
+		       inst[0],inst[1],inst[2],inst[3],inst[4],inst[5],inst[6],inst[7]);
+
+		if (inst[0] == 0xf0U) {
+			vcpu->arch.inst_len = 1U;
+			pr_err("skip lock f0 ");
+		}
+		//else {
+		//	vcpu_retain_rip(vcpu);
+		//	status = vcpu_queue_exception(vcpu, exception_vector, int_err_code);
+		//}
+	}
 
 	if (exception_vector == IDT_MC) {
 		/* just print error message for #MC, it then will be injected
