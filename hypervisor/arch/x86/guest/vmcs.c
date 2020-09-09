@@ -364,7 +364,7 @@ static void init_exec_ctrl(struct acrn_vcpu *vcpu)
 	 * on corresponding guest * exception - pg 2902 24.6.3
 	 * enable VM exit on MC only
 	 */
-	value32 = ((1U << IDT_MC) | (1U << IDT_AC));
+	value32 = ((1U << IDT_MC) | (1U << IDT_AC) | (1U << IDT_DB));
 	exec_vmwrite32(VMX_EXCEPTION_BITMAP, value32);
 
 	/* Set up page fault error code mask - second paragraph * pg 2902
