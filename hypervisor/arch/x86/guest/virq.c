@@ -540,11 +540,6 @@ int32_t exception_vmexit_handler(struct acrn_vcpu *vcpu)
 					vcpu_make_request(other, ACRN_REQUEST_SPLIT_LOCK);
 				}
 			}
-			// set the TF in EFLAGS
-			pr_err("rflags 0x%016llx vcpu_id %u vm %u", vcpu_get_rflags(vcpu), vcpu->vcpu_id, vcpu->vm->vm_id);
-			vcpu_set_rflags(vcpu, vcpu_get_rflags(vcpu) | HV_ARCH_VCPU_RFLAGS_TF);
-			pr_err("set rflags 0x%016llx vcpu_id %u vm %u", vcpu_get_rflags(vcpu), vcpu->vcpu_id, vcpu->vm->vm_id);
-			vcpu->arch.split_lock_ac_step_mode = true;
 		}
 
 		status = copy_from_gva(vcpu, inst, exec_vmread(VMX_GUEST_RIP), 8U, &err_code, &fault_addr);
@@ -559,12 +554,36 @@ int32_t exception_vmexit_handler(struct acrn_vcpu *vcpu)
 		if (inst[0] == 0xf0U) {
 			vcpu->arch.inst_len = 1U;
 			pr_err("skip lock f0 ");
-		} else {
-			pr_err("f0 not found, inject back ");
-			vcpu_retain_rip(vcpu);
-			status = vcpu_queue_exception(vcpu, exception_vector, int_err_code);
-		}
 
+			if (vcpu->vm->hw.created_vcpus > 1U) {
+				// set the TF in EFLAGS
+				pr_err("rflags 0x%016llx vcpu_id %u vm %u", vcpu_get_rflags(vcpu), vcpu->vcpu_id, vcpu->vm->vm_id);
+				vcpu_set_rflags(vcpu, vcpu_get_rflags(vcpu) | HV_ARCH_VCPU_RFLAGS_TF);
+				pr_err("set rflags 0x%016llx vcpu_id %u vm %u", vcpu_get_rflags(vcpu), vcpu->vcpu_id, vcpu->vm->vm_id);
+				vcpu->arch.split_lock_ac_step_mode = true;
+			}
+		} else {
+			pr_err("f0 not found, emulate xchg ");
+			if (decode_instruction(vcpu) >= 0) {
+				status = emulate_instruction(vcpu);
+				if (status != 0) {
+					pr_err("AC workround failed, inject AC back ");
+					vcpu_retain_rip(vcpu);
+					status = vcpu_queue_exception(vcpu, exception_vector, int_err_code);
+				} else {
+					/* We have emulate the xchg, skip it */
+					pr_err("skip xchg, inst len %u ", vcpu->arch.inst_len);
+					if (vcpu->vm->hw.created_vcpus > 1U) {
+						foreach_vcpu(i, vcpu->vm, other) {
+							if (other != vcpu) {
+								pr_err("AC xchg splitlock signal ");
+								signal_event(&other->events[VCPU_EVENT_SPLIT_LOCK]);
+							}
+						}
+					}
+				}
+			}
+		}
 	} else if (exception_vector == IDT_DB) {
 		if (vcpu->arch.split_lock_ac_step_mode == true) {
 			pr_err("DB exception 0");

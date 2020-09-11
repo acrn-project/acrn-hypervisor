@@ -82,6 +82,7 @@
 #define VIE_OP_TYPE_STOS	13U
 #define VIE_OP_TYPE_BITTEST	14U
 #define VIE_OP_TYPE_TEST	15U
+#define VIE_OP_TYPE_XCHG	16U
 
 /* struct vie_op.op_flags */
 #define VIE_OP_F_IMM		(1U << 0U)  /* 16/32-bit immediate operand */
@@ -201,6 +202,9 @@ static const struct instr_emul_vie_op one_byte_opcodes[256] = {
 	},
 	[0x85] = {
 		.op_type = VIE_OP_TYPE_TEST,
+	},
+	[0x87] = {
+		.op_type = VIE_OP_TYPE_XCHG,
 	},
 	[0x08] = {
 		.op_type = VIE_OP_TYPE_OR,
@@ -1640,6 +1644,46 @@ static int32_t emulate_bittest(struct acrn_vcpu *vcpu, const struct instr_emul_v
 	return ret;
 }
 
+static int32_t emulate_xchg(struct acrn_vcpu *vcpu, const struct instr_emul_vie *vie)
+{
+	enum cpu_reg_name reg;
+	uint64_t reg_val, rax, data;
+	int32_t ret;
+	uint8_t opsize = vie->opsize;
+	int32_t status;
+	uint32_t err_code = 0U;
+	uint64_t fault_addr;
+
+	/*
+	 * Only emulate Mod = 00b and R/M = 000b
+	 */
+	if (((vie->mod & 3U) == 0U) && ((vie->rm & 7U) == 0U)) {
+		reg = (enum cpu_reg_name)(vie->reg);
+		reg_val = vm_get_register(vcpu, reg);
+		rax = vm_get_register(vcpu, CPU_REG_RAX);
+
+		status = copy_from_gva(vcpu, &data, rax, 8U, &err_code, &fault_addr);
+		if (status < 0) {
+			pr_fatal("Error copy xchg data from Guest!");
+		}
+
+		status = copy_to_gva(vcpu, &reg_val, rax, opsize, &err_code, &fault_addr);
+		if (status < 0) {
+			pr_fatal("Error copy xchg data to Guest!");
+		}
+
+		vie_update_register(vcpu, reg, data, opsize);
+		ret = 0;
+
+		pr_err("reg:%u reg_val:0x%016lx data:0x%016lx rax:0x%016lx ", reg, reg_val, data, rax);
+	} else {
+		ret = -EINVAL;
+		pr_err("xchg not our case ");
+	}
+
+	return ret;
+}
+
 static int32_t vie_init(struct instr_emul_vie *vie, struct acrn_vcpu *vcpu)
 {
 	uint32_t inst_len = vcpu->arch.inst_len;
@@ -2398,6 +2442,9 @@ int32_t emulate_instruction(struct acrn_vcpu *vcpu)
 			break;
 		case VIE_OP_TYPE_BITTEST:
 			error = emulate_bittest(vcpu, vie);
+			break;
+		case VIE_OP_TYPE_XCHG:
+			error = emulate_xchg(vcpu, vie);
 			break;
 		default:
 			error = -EINVAL;
