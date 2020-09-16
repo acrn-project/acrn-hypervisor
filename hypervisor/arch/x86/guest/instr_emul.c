@@ -1663,20 +1663,22 @@ static int32_t emulate_xchg(struct acrn_vcpu *vcpu, const struct instr_emul_vie 
 		reg_val = vm_get_register(vcpu, reg);
 		rax = vm_get_register(vcpu, CPU_REG_RAX);
 
+#if 0
 		status = copy_from_gva(vcpu, &data, rax, 8U, &err_code, &fault_addr);
 		if (status < 0) {
-			pr_err("Error copy xchg data from Guest!");
+			pr_fatal("Error copy xchg data from Guest!");
 		}
-#if 0
+#endif
+		data = 0x74006f006f00529d;
 		status = copy_to_gva(vcpu, &reg_val, rax, opsize, &err_code, &fault_addr);
 		if (status < 0) {
-			pr_err("Error copy xchg data to Guest!");
+			pr_fatal("Error copy xchg data to Guest!");
 		}
 
 		vie_update_register(vcpu, reg, data, opsize);
-#endif
-		ret = -EINVAL;
-		pr_err("xchg this is our case opsize %u ", opsize);
+
+		ret = 0;
+		pr_err("xchg this is our case opsize: %u ", opsize);
 		pr_err("reg:%u reg_val:0x%016lx  ", reg, reg_val);
 		pr_err("rax:0x%016lx data:0x%016lx ", rax, data);
 	} else {
