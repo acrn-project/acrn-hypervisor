@@ -1657,25 +1657,28 @@ static int32_t emulate_xchg(struct acrn_vcpu *vcpu, const struct instr_emul_vie 
 	/*
 	 * Only emulate Mod = 00b and R/M = 000b
 	 */
-	if (((vie->mod & 3U) == 0U) && ((vie->rm & 7U) == 0U)) {
+	if (vcpu->arch.xchg_emulating == true &&
+	    (((vie->mod & 3U) == 0U) && ((vie->rm & 7U) == 0U))) {
 		reg = (enum cpu_reg_name)(vie->reg);
 		reg_val = vm_get_register(vcpu, reg);
 		rax = vm_get_register(vcpu, CPU_REG_RAX);
 
 		status = copy_from_gva(vcpu, &data, rax, 8U, &err_code, &fault_addr);
 		if (status < 0) {
-			pr_fatal("Error copy xchg data from Guest!");
+			pr_err("Error copy xchg data from Guest!");
 		}
-
+#if 0
 		status = copy_to_gva(vcpu, &reg_val, rax, opsize, &err_code, &fault_addr);
 		if (status < 0) {
-			pr_fatal("Error copy xchg data to Guest!");
+			pr_err("Error copy xchg data to Guest!");
 		}
 
 		vie_update_register(vcpu, reg, data, opsize);
-		ret = 0;
-
-		pr_err("reg:%u reg_val:0x%016lx data:0x%016lx rax:0x%016lx ", reg, reg_val, data, rax);
+#endif
+		ret = -EINVAL;
+		pr_err("xchg this is our case opsize %u ", opsize);
+		pr_err("reg:%u reg_val:0x%016lx  ", reg, reg_val);
+		pr_err("rax:0x%016lx data:0x%016lx ", rax, data);
 	} else {
 		ret = -EINVAL;
 		pr_err("xchg not our case ");
