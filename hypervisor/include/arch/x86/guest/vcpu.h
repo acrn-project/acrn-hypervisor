@@ -238,6 +238,7 @@ struct acrn_vcpu_arch {
 	bool irq_window_enabled;
 	bool split_lock_ac_step_mode;
 	bool xchg_emulating;
+	uint64_t xchg_gva;
 	uint32_t nrexits;
 
 	/* VCPU context state information */

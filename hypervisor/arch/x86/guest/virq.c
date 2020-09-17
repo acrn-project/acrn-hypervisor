@@ -564,10 +564,9 @@ int32_t exception_vmexit_handler(struct acrn_vcpu *vcpu)
 			}
 		} else {
 			pr_err("f0 not found, emulate xchg ");
+			vcpu->arch.xchg_emulating = true;
 			if (decode_instruction(vcpu) >= 0) {
-				vcpu->arch.xchg_emulating = true;
 				status = emulate_instruction(vcpu);
-				vcpu->arch.xchg_emulating = false;
 				if (status != 0) {
 					pr_err("AC workround failed, inject AC back ");
 					vcpu_retain_rip(vcpu);
@@ -585,6 +584,7 @@ int32_t exception_vmexit_handler(struct acrn_vcpu *vcpu)
 					}
 				}
 			}
+			vcpu->arch.xchg_emulating = false;
 		}
 	} else if (exception_vector == IDT_DB) {
 		if (vcpu->arch.split_lock_ac_step_mode == true) {

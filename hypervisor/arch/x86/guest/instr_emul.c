@@ -1647,40 +1647,66 @@ static int32_t emulate_bittest(struct acrn_vcpu *vcpu, const struct instr_emul_v
 static int32_t emulate_xchg(struct acrn_vcpu *vcpu, const struct instr_emul_vie *vie)
 {
 	enum cpu_reg_name reg;
-	uint64_t reg_val, rax, data;
+	uint64_t reg_val, data = 0UL;
+//	uint64_t data1 = 0UL;
 	int32_t ret;
 	uint8_t opsize = vie->opsize;
 	int32_t status;
 	uint32_t err_code = 0U;
 	uint64_t fault_addr;
+//	uint64_t gpa;
 
 	/*
 	 * Only emulate Mod = 00b and R/M = 000b
 	 */
-	if (vcpu->arch.xchg_emulating == true &&
-	    (((vie->mod & 3U) == 0U) && ((vie->rm & 7U) == 0U))) {
+	if (vcpu->arch.xchg_emulating == true) {
 		reg = (enum cpu_reg_name)(vie->reg);
 		reg_val = vm_get_register(vcpu, reg);
-		rax = vm_get_register(vcpu, CPU_REG_RAX);
+		// rax = vm_get_register(vcpu, CPU_REG_RAX);
 
 #if 0
-		status = copy_from_gva(vcpu, &data, rax, 8U, &err_code, &fault_addr);
+		status = copy_from_gva(vcpu, &data, vcpu->arch.xchg_gva, opsize, &err_code, &fault_addr);
 		if (status < 0) {
 			pr_fatal("Error copy xchg data from Guest!");
 		}
 #endif
-		data = 0x74006f006f00529d;
-		status = copy_to_gva(vcpu, &reg_val, rax, opsize, &err_code, &fault_addr);
+		// data = 0x74006f006f00529d;
+		err_code = PAGE_FAULT_WR_FLAG;
+		status = copy_to_gva(vcpu, &reg_val, vcpu->arch.xchg_gva, opsize, &err_code, &fault_addr);
 		if (status < 0) {
 			pr_fatal("Error copy xchg data to Guest!");
 		}
 
+
+#if 0
+		status = gva2gpa(vcpu, vcpu->arch.xchg_gva, &gpa, &err_code);
+		if (status < 0) {
+			pr_fatal("xchg gva2gpa fail!");
+		}
+
+		status = copy_from_gpa(vcpu->vm, &data, gpa, opsize);
+		if (status < 0) {
+			pr_fatal("xchg from gpa fail");
+		}
+		pr_err("from gpa data:0x%016lx ", data);
+
+		status = copy_to_gpa(vcpu->vm, &reg_val, gpa, opsize);
+		if (status < 0) {
+			pr_fatal("xchg to gpa fail");
+		}
+
+		status = copy_from_gpa(vcpu->vm, &data1, gpa, opsize);
+		if (status < 0) {
+			pr_fatal("xchg from gpa fail");
+		}
+		pr_err("from gpa check data1:0x%016lx ", data1);
+#endif
 		vie_update_register(vcpu, reg, data, opsize);
 
 		ret = 0;
-		pr_err("xchg this is our case opsize: %u ", opsize);
+		pr_err("xchg this is our case opsize:: %u ", opsize);
 		pr_err("reg:%u reg_val:0x%016lx  ", reg, reg_val);
-		pr_err("rax:0x%016lx data:0x%016lx ", rax, data);
+		pr_err("addr:0x%016lx data:0x%016lx ", vcpu->arch.xchg_gva, data);
 	} else {
 		ret = -EINVAL;
 		pr_err("xchg not our case ");
@@ -2325,6 +2351,10 @@ static int32_t instr_check_gva(struct acrn_vcpu *vcpu, enum vm_cpu_mode cpu_mode
 	}
 
 	gva = segbase + base + (uint64_t)vie->scale * idx + (uint64_t)vie->displacement;
+	if (vcpu->arch.xchg_emulating == true) {
+		vcpu->arch.xchg_gva = gva;
+		pr_err("xchg_gva: 0x%016llx ", vcpu->arch.xchg_gva);
+	}
 
 	if (vie_canonical_check(cpu_mode, gva) != 0) {
 		if (seg == CPU_REG_SS) {
