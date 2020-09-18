@@ -1644,7 +1644,7 @@ static int32_t emulate_bittest(struct acrn_vcpu *vcpu, const struct instr_emul_v
 	return ret;
 }
 
-static int32_t emulate_xchg(struct acrn_vcpu *vcpu, const struct instr_emul_vie *vie)
+int32_t emulate_xchg(struct acrn_vcpu *vcpu, const struct instr_emul_vie *vie)
 {
 	enum cpu_reg_name reg;
 	uint64_t reg_val, data = 0UL;
@@ -1664,7 +1664,7 @@ static int32_t emulate_xchg(struct acrn_vcpu *vcpu, const struct instr_emul_vie 
 		reg_val = vm_get_register(vcpu, reg);
 		// rax = vm_get_register(vcpu, CPU_REG_RAX);
 
-#if 0
+#if 1
 		status = copy_from_gva(vcpu, &data, vcpu->arch.xchg_gva, opsize, &err_code, &fault_addr);
 		if (status < 0) {
 			pr_fatal("Error copy xchg data from Guest!");
