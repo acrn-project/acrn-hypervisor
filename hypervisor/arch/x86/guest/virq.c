@@ -251,8 +251,10 @@ static bool vcpu_inject_exception(struct acrn_vcpu *vcpu)
 
 		vcpu->arch.exception_info.exception = VECTOR_INVALID;
 
-		/* retain rip for exception injection */
-		vcpu_retain_rip(vcpu);
+		/* If this is a fault, we should retain the RIP */
+		if (get_exception_type(vector) == EXCEPTION_FAULT) {
+			vcpu_retain_rip(vcpu);
+		}
 
 		/* SDM 17.3.1.1 For any fault-class exception except a debug exception generated in response to an
 		 * instruction breakpoint, the value pushed for RF is 1.
@@ -697,7 +699,6 @@ int32_t exception_vmexit_handler(struct acrn_vcpu *vcpu)
 
 	status = emulate_splitlock(vcpu, exception_vector, &queue_exception);
 	if ((status == 0) && queue_exception) {
-		vcpu_retain_rip(vcpu);
 		status = vcpu_queue_exception(vcpu, exception_vector, int_err_code);
 	}
 
