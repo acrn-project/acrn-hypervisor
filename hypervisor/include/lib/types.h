@@ -47,6 +47,17 @@ typedef _Bool bool;
 #define UINT32_MAX	(0xffffffffU)
 #endif
 
+extern uint64_t start_tsc_1;
+extern uint64_t start_tsc_2;
+extern uint64_t start_tsc_3;
+extern uint64_t start_tsc_3_1;
+extern uint64_t start_tsc_3_2;
+extern uint64_t start_tsc_3_3;
+extern uint64_t start_tsc_3_4;
+extern uint64_t start_tsc_3_5;
+extern uint64_t start_tsc_4;
+extern uint64_t start_tsc_5;
+
 #endif /* ASSEMBLER */
 
 #endif /* INCLUDE_TYPES_H defined */

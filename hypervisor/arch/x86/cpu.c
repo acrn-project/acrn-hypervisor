@@ -46,6 +46,17 @@ static void set_current_pcpu_id(uint16_t pcpu_id);
 static void print_hv_banner(void);
 static uint16_t get_pcpu_id_from_lapic_id(uint32_t lapic_id);
 static uint64_t start_tsc __attribute__((__section__(".bss_noinit")));
+uint64_t start_tsc_1 = 0UL;
+uint64_t start_tsc_2 = 0UL;
+uint64_t start_tsc_3 = 0UL;
+uint64_t start_tsc_3_1 = 0UL;
+uint64_t start_tsc_3_2 = 0UL;
+uint64_t start_tsc_3_3 = 0UL;
+uint64_t start_tsc_3_4 = 0UL;
+uint64_t start_tsc_3_5 = 0UL;
+uint64_t start_tsc_4 = 0UL;
+uint64_t start_tsc_5 = 0UL;
+
 
 /**
  * @pre phys_cpu_num <= MAX_PCPU_NUM
@@ -121,6 +132,7 @@ void init_pcpu_pre(bool is_bsp)
 	if (is_bsp) {
 		pcpu_id = BSP_CPU_ID;
 		start_tsc = rdtsc();
+		start_tsc_1 = rdtsc();
 
 		/* Get CPU capabilities thru CPUID, including the physical address bit
 		 * limit which is required for initializing paging.
@@ -215,15 +227,16 @@ void init_pcpu_post(uint16_t pcpu_id)
 		/* Calibrate TSC Frequency */
 		calibrate_tsc();
 
-		pr_acrnlog("HV version %s-%s-%s %s (daily tag:%s) %s@%s build by %s%s, start time %luus",
-				HV_FULL_VERSION,
-				HV_BUILD_TIME, HV_BUILD_VERSION, HV_BUILD_TYPE,
-				HV_DAILY_TAG, HV_BUILD_SCENARIO, HV_BUILD_BOARD,
-				HV_BUILD_USER, HV_CONFIG_TOOL, ticks_to_us(start_tsc));
+		//pr_acrnlog("HV version %s-%s-%s %s (daily tag:%s) %s@%s build by %s%s, start time %luus",
+		//		HV_FULL_VERSION,
+		//		HV_BUILD_TIME, HV_BUILD_VERSION, HV_BUILD_TYPE,
+		//		HV_DAILY_TAG, HV_BUILD_SCENARIO, HV_BUILD_BOARD,
+		//		HV_BUILD_USER, HV_CONFIG_TOOL, ticks_to_us(start_tsc));
+		//pr_acrnlog("HV start time %luus.. %luus", ticks_to_us(start_tsc), ticks_to_us(start_tsc_1));
 
-		pr_acrnlog("API version %u.%u",	HV_API_MAJOR_VERSION, HV_API_MINOR_VERSION);
+		//pr_acrnlog("API version %u.%u",	HV_API_MAJOR_VERSION, HV_API_MINOR_VERSION);
 
-		pr_acrnlog("Detect processor: %s", (get_pcpu_info())->model_name);
+		//pr_acrnlog("Detect processor: %s", (get_pcpu_info())->model_name);
 
 		pr_dbg("Core %hu is up", BSP_CPU_ID);
 
@@ -244,15 +257,23 @@ void init_pcpu_post(uint16_t pcpu_id)
 			panic("failed to initialize iommu!");
 		}
 
+		start_tsc_3_1 = rdtsc();
+
 #ifdef CONFIG_IVSHMEM_ENABLED
 		init_ivshmem_shared_memory();
 #endif
+
+		start_tsc_3_2 = rdtsc();
 		init_pci_pdev_list(); /* init_iommu must come before this */
+		start_tsc_3_3 = rdtsc();
 		ptdev_init();
+		start_tsc_3_4 = rdtsc();
 
 		if (init_sgx() != 0) {
 			panic("failed to initialize sgx!");
 		}
+
+		start_tsc_3_5 = rdtsc();
 
 		/*
 		 * Reserve memory from platform E820 for EPT 4K pages for all VMs
@@ -469,10 +490,10 @@ static void set_current_pcpu_id(uint16_t pcpu_id)
 
 static void print_hv_banner(void)
 {
-	const char *boot_msg = "ACRN Hypervisor\n\r";
+	//const char *boot_msg = "ACRN Hypervisor\n\r";
 
 	/* Print the boot message */
-	printf(boot_msg);
+	//printf(boot_msg);
 }
 
 static

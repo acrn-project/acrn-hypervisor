@@ -298,7 +298,7 @@ void calibrate_tsc(void)
 		tsc_hz = pit_calibrate_tsc(CAL_MS);
 	}
 	tsc_khz = (uint32_t)(tsc_hz / 1000UL);
-	printf("%s, tsc_khz=%lu\n", __func__, tsc_khz);
+	//printf("%s, tsc_khz=%lu\n", __func__, tsc_khz);
 }
 
 uint32_t get_tsc_khz(void)

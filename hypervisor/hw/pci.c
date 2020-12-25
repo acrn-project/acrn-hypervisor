@@ -640,7 +640,7 @@ void init_pci_pdev_list(void)
 	pci_parse_iommu_devscopes(&bdfs_from_drhds, &drhd_idx_pci_all);
 
 	/* TODO: iterate over list of PCI Host Bridges found in ACPI namespace */
-	for (bus = 0U; bus <= PCI_BUSMAX; bus++) {
+	for (bus = 0U; bus <= 16; bus++) {
 		was_visited = bitmap_test((bus & 0x3FU), &buses_visited[bus >> 6U]);
 		if (!was_visited) {
 			scan_pci_hierarchy((uint8_t)bus, buses_visited, &bdfs_from_drhds, drhd_idx_pci_all);

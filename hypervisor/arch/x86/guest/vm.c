@@ -792,6 +792,7 @@ void prepare_vm(uint16_t vm_id, struct acrn_vm_config *vm_config)
 {
 	int32_t err = 0;
 	struct acrn_vm *vm = NULL;
+	uint64_t end_tsc;
 
 	/* SOS and pre-launched VMs launch on all pCPUs defined in vm_config->cpu_affinity */
 	err = create_vm(vm_id, vm_config->cpu_affinity, vm_config, &vm);
@@ -805,6 +806,26 @@ void prepare_vm(uint16_t vm_id, struct acrn_vm_config *vm_config)
 
 		/* start vm BSP automatically */
 		start_vm(vm);
+		
+		if (vm_id == 0UL) {
+			end_tsc = rdtsc();
+			pr_err("boot time1. = %luus", ticks_to_us(end_tsc) - ticks_to_us(start_tsc_1));
+			pr_err("boot time2 = %luus", ticks_to_us(end_tsc) - ticks_to_us(start_tsc_2));
+			pr_err("boot time3 = %luus", ticks_to_us(end_tsc) - ticks_to_us(start_tsc_3));
+			pr_err("boot time31 = %luus", ticks_to_us(end_tsc) - ticks_to_us(start_tsc_3_1));
+			pr_err("boot time32 = %luus", ticks_to_us(end_tsc) - ticks_to_us(start_tsc_3_2));
+			pr_err("boot time33 = %luus", ticks_to_us(end_tsc) - ticks_to_us(start_tsc_3_3));
+			pr_err("boot time34 = %luus", ticks_to_us(end_tsc) - ticks_to_us(start_tsc_3_4));
+			pr_err("boot time35 = %luus", ticks_to_us(end_tsc) - ticks_to_us(start_tsc_3_5));
+			pr_err("boot time4 = %luus", ticks_to_us(end_tsc) - ticks_to_us(start_tsc_4));
+			pr_err("boot time5 = %luus", ticks_to_us(end_tsc) - ticks_to_us(start_tsc_5));
+			//pr_err("start_tsc_1 = %luus", start_tsc_1);
+			//pr_err("start_tsc_2 = %luus", start_tsc_2);
+			//pr_err("start_tsc_3 = %luus", start_tsc_3);
+			//pr_err("start_tsc_4 = %luus", start_tsc_4);
+			//pr_err("start_tsc_5 = %luus", start_tsc_5);
+			//pr_err("end_tsc = %luus", end_tsc);
+		}	
 
 		pr_acrnlog("Start VM id: %x name: %s", vm_id, vm_config->name);
 	}
