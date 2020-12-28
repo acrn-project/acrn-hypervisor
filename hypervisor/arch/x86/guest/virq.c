@@ -319,9 +319,9 @@ int32_t interrupt_window_vmexit_handler(struct acrn_vcpu *vcpu)
 	 * acrn_handle_pending_request will continue handle for this vcpu
 	 */
 	vcpu->arch.irq_window_enabled = false;
-	value32 = exec_vmread32(VMX_PROC_VM_EXEC_CONTROLS);
+	value32 = vcpu->arch.proc_vm_exec_ctrls;
 	value32 &= ~(VMX_PROCBASED_CTLS_IRQ_WIN);
-	exec_vmwrite32(VMX_PROC_VM_EXEC_CONTROLS, value32);
+	vcpu->arch.proc_vm_exec_ctrls = value32;
 
 	vcpu_retain_rip(vcpu);
 	return 0;
@@ -462,9 +462,9 @@ int32_t acrn_handle_pending_request(struct acrn_vcpu *vcpu)
 			if (bitmap_test(ACRN_REQUEST_EXTINT, pending_req_bits) ||
 				bitmap_test(ACRN_REQUEST_NMI, pending_req_bits) ||
 				vlapic_has_pending_delivery_intr(vcpu)) {
-				tmp = exec_vmread32(VMX_PROC_VM_EXEC_CONTROLS);
+				tmp = vcpu->arch.proc_vm_exec_ctrls;
 				tmp |= VMX_PROCBASED_CTLS_IRQ_WIN;
-				exec_vmwrite32(VMX_PROC_VM_EXEC_CONTROLS, tmp);
+				vcpu->arch.proc_vm_exec_ctrls = tmp;
 				arch->irq_window_enabled = true;
 			}
 		}
@@ -583,9 +583,9 @@ static int32_t emulate_splitlock(struct acrn_vcpu *vcpu, uint32_t exception_vect
 					vcpu->arch.inst_len = 1U;
 					if (vcpu->vm->hw.created_vcpus > 1U) {
 						/* Enable MTF to start single-stepping execution */
-						value32 = exec_vmread32(VMX_PROC_VM_EXEC_CONTROLS);
+						value32 = vcpu->arch.proc_vm_exec_ctrls;
 						value32 |= VMX_PROCBASED_CTLS_MON_TRAP;
-						exec_vmwrite32(VMX_PROC_VM_EXEC_CONTROLS, value32);
+						vcpu->arch.proc_vm_exec_ctrls = value32;
 
 						vcpu->arch.emulating_lock = true;
 					}
@@ -710,9 +710,9 @@ int32_t nmi_window_vmexit_handler(struct acrn_vcpu *vcpu)
 	 * Disable NMI-window exiting here. We will process
 	 * the pending request in acrn_handle_pending_request later
 	 */
-	value32 = exec_vmread32(VMX_PROC_VM_EXEC_CONTROLS);
+	value32 = vcpu->arch.proc_vm_exec_ctrls;
 	value32 &= ~VMX_PROCBASED_CTLS_NMI_WINEXIT;
-	exec_vmwrite32(VMX_PROC_VM_EXEC_CONTROLS, value32);
+	vcpu->arch.proc_vm_exec_ctrls = value32;
 
 	vcpu_retain_rip(vcpu);
 

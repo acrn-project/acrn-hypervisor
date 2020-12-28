@@ -294,9 +294,9 @@ static int32_t mtf_vmexit_handler(struct acrn_vcpu *vcpu)
 {
 	uint32_t value32;
 
-	value32 = exec_vmread32(VMX_PROC_VM_EXEC_CONTROLS);
+	value32 = vcpu->arch.proc_vm_exec_ctrls;
 	value32 &= ~(VMX_PROCBASED_CTLS_MON_TRAP);
-	exec_vmwrite32(VMX_PROC_VM_EXEC_CONTROLS, value32);
+	vcpu->arch.proc_vm_exec_ctrls = value32;
 
 	vcpu_retain_rip(vcpu);
 

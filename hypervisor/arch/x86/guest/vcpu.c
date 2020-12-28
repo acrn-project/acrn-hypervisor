@@ -618,6 +618,8 @@ int32_t run_vcpu(struct acrn_vcpu *vcpu)
 		rip = vcpu_get_rip(vcpu);
 		exec_vmwrite(VMX_GUEST_RIP, ((rip+(uint64_t)instlen) &
 				0xFFFFFFFFFFFFFFFFUL));
+
+		exec_vmwrite32(VMX_PROC_VM_EXEC_CONTROLS, vcpu->arch.proc_vm_exec_ctrls);
 #ifdef CONFIG_L1D_FLUSH_VMENTRY_ENABLED
 		cpu_l1d_flush();
 #endif
@@ -638,6 +640,8 @@ int32_t run_vcpu(struct acrn_vcpu *vcpu)
 
 	/* Obtain current VCPU instruction length */
 	vcpu->arch.inst_len = exec_vmread32(VMX_EXIT_INSTR_LEN);
+
+	vcpu->arch.proc_vm_exec_ctrls = exec_vmread32(VMX_PROC_VM_EXEC_CONTROLS);
 
 	ctx->cpu_regs.regs.rsp = exec_vmread(VMX_GUEST_RSP);
 
