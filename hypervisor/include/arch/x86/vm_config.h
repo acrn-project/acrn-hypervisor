@@ -94,6 +94,8 @@ struct acrn_vm_mem_config {
 	uint64_t start_hpa2;	/* Start of second HPA for non-contiguous allocations in VM memory configuration,
 				   for pre-launched VMs only */
 	uint64_t size_hpa2;	/* Size of second HPA for non-contiguous allocations in VM memory configuration */
+	uint64_t ree_start_hpa;
+	uint64_t ree_size;
 };
 
 struct target_vuart {
@@ -125,6 +127,7 @@ struct vuart_config {
 enum os_kernel_type {
 	KERNEL_BZIMAGE = 1,
 	KERNEL_ZEPHYR,
+	KERNEL_TEE,
 };
 
 struct acrn_vm_os_config {

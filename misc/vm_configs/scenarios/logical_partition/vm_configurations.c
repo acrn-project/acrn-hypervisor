@@ -26,12 +26,15 @@ struct acrn_vm_config vm_configs[CONFIG_MAX_VM_NUM] = {
 			.size = VM0_CONFIG_MEM_SIZE,
 			.start_hpa2 = VM0_CONFIG_MEM_START_HPA2,
 			.size_hpa2 = VM0_CONFIG_MEM_SIZE_HPA2,
+			.ree_start_hpa = VM1_CONFIG_MEM_START_HPA,
+			.ree_size = VM1_CONFIG_MEM_SIZE,
 		},
 		.os_config = {
-			.name = "YOCTO",
-			.kernel_type = KERNEL_BZIMAGE,
-			.kernel_mod_tag = "Linux_bzImage",
-			.bootargs = VM0_BOOT_ARGS,
+			.name = "Tee",
+			.kernel_type = KERNEL_TEE,
+			.kernel_mod_tag = "Tee_RawImage",
+			.kernel_load_addr = 0x12951000,
+			.kernel_entry_addr = 0x12951000,
 		},
 		.acpi_config = {
 			.acpi_mod_tag = "ACPI_VM0",
@@ -48,8 +51,6 @@ struct acrn_vm_config vm_configs[CONFIG_MAX_VM_NUM] = {
 			.t_vuart.vm_id = 1U,
 			.t_vuart.vuart_id = 1U,
 		},
-		.pci_dev_num = VM0_CONFIG_PCI_DEV_NUM,
-		.pci_devs = vm0_pci_devs,
 #ifdef VM0_PASSTHROUGH_TPM
 		.pt_tpm2 = true,
 		.mmiodevs[0] = {
