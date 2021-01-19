@@ -13,6 +13,7 @@
 #include <hypercall.h>
 #include <trace.h>
 #include <logmsg.h>
+#include <tee.h>
 
 struct hc_dispatch {
 	/* handler(struct acrn_vm *sos_vm, struct acrn_vm *target_vm, uint64_t param1, uint64_t param2) */
@@ -178,10 +179,25 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 	struct acrn_vm *vm = vcpu->vm;
 	/* hypercall ID from guest*/
 	uint64_t hypcall_id = vcpu_get_gpreg(vcpu, CPU_REG_R8);
+	uint64_t rax;
 
 	if (!is_hypercall_from_ring0()) {
 		vcpu_inject_gp(vcpu, 0U);
 		ret = -EACCES;
+	} else if (is_tee_vm(vm)) {
+		rax = vcpu_get_gpreg(vcpu, CPU_REG_RAX);
+		pr_err("TEE EXIT_REASON_VMCALL, nr: 0x%016lx\n", rax);
+		if (rax != OPTEE_VMCALL_SMC) {
+			vcpu_inject_ud(vcpu);
+			ret = -ENODEV;
+		} else {
+			/*
+			 * Return to TEE VM if the hypercall with RAX = 0x6F707400,
+			 * For current TEE VM, its behavior is call this hypercall
+			 * again and again.
+			 */
+			ret = (uint32_t)rax;
+		}
 	} else if (hypcall_id == HC_WORLD_SWITCH) {
 		ret = hcall_world_switch(vcpu);
 	} else if (hypcall_id == HC_INITIALIZE_TRUSTY) {
