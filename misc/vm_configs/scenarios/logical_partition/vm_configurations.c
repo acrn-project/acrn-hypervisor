@@ -105,7 +105,7 @@ struct acrn_vm_config vm_configs[CONFIG_MAX_VM_NUM] = {
 			.t_vuart.vm_id = 0U,
 			.t_vuart.vuart_id = 1U,
 		},
-		.pci_dev_num = VM1_CONFIG_PCI_DEV_NUM,
-		.pci_devs = vm1_pci_devs,
+		.pci_dev_num = VM0_CONFIG_PCI_DEV_NUM,
+		.pci_devs = vm0_pci_devs,
 	},
 };
