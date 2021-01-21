@@ -279,6 +279,11 @@ static void prepare_prelaunched_vm_memmap(struct acrn_vm *vm, const struct acrn_
 			EPT_WB | EPT_WR);
 	}
 
+	/* Map the 2M shared memory for TEE/REE, start from: GPA 4G - 2M, size: 2M */
+	ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp, hva2hpa(tee_smc_shared_mem),
+		   TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE,
+		   EPT_WB | EPT_WR);
+
 	for (i = 0U; i < MAX_MMIO_DEV_NUM; i++) {
 		(void)assign_mmio_dev(vm, &vm_config->mmiodevs[i]);
 
