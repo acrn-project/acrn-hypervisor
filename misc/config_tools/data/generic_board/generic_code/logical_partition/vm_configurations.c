@@ -6,6 +6,7 @@
 #include <vm_config.h>
 #include <vuart.h>
 #include <pci_dev.h>
+#include <tee.h>
 
 
 extern struct pt_intx_config vm0_pt_intx[1U];
@@ -15,7 +16,7 @@ struct acrn_vm_config vm_configs[CONFIG_MAX_VM_NUM] = {
 		CONFIG_PRE_STD_VM(1),
 		.name = "ACRN PRE-LAUNCHED VM0",
 		.cpu_affinity = VM0_CONFIG_CPU_AFFINITY,
-		.guest_flags = 0UL,
+		.guest_flags = TEE_GUEST_FLAG_MASK,
 #ifdef CONFIG_RDT_ENABLED
 		.clos = VM0_VCPU_CLOS,
 #endif
@@ -69,7 +70,7 @@ struct acrn_vm_config vm_configs[CONFIG_MAX_VM_NUM] = {
 		CONFIG_PRE_STD_VM(2),
 		.name = "ACRN PRE-LAUNCHED VM1",
 		.cpu_affinity = VM1_CONFIG_CPU_AFFINITY,
-		.guest_flags = 0UL,
+		.guest_flags = REE_GUEST_FLAG_MASK,
 #ifdef CONFIG_RDT_ENABLED
 		.clos = VM1_VCPU_CLOS,
 #endif
