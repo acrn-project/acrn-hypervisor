@@ -8,6 +8,7 @@
 #define TEE_H_
 
 #include <types.h>
+#include <acrn_common.h>
 
 #define TEE_GPA_MAPPING_TO_REE_MEM (64UL * 1024UL * 1024UL * 1024UL)
 
@@ -17,6 +18,9 @@
 extern uint8_t tee_smc_shared_mem[TEE_SMC_CALL_SHARED_PAGE_SIZE];
 
 #define OPTEE_VMCALL_SMC 0x6F707400UL
+
+#define TEE_GUEST_FLAG_MASK	(GUEST_FLAG_TEE)
+#define REE_GUEST_FLAG_MASK	(GUEST_FLAG_REE)
 
 bool is_tee_vm(const struct acrn_vm *vm);
 
