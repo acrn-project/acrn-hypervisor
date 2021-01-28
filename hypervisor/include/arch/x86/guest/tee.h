@@ -22,6 +22,14 @@ extern uint8_t tee_smc_shared_mem[TEE_SMC_CALL_SHARED_PAGE_SIZE];
 #define TEE_GUEST_FLAG_MASK	(GUEST_FLAG_TEE)
 #define REE_GUEST_FLAG_MASK	(GUEST_FLAG_REE)
 
+#define TEE_REE_NOTIFICATION_VECTOR	0xF3U
+
+#define TEE_SERVICE_ACCEPTED	0x0
+#define TEE_SERVICE_REFUSED	0x1
+
 bool is_tee_vm(const struct acrn_vm *vm);
+void suspend_ree_vm(void);
+void resume_ree_vm(void);
+int32_t tee_service_done(void);
 
 #endif /* TEE_H_ */
