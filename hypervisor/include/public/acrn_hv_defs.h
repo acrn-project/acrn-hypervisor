@@ -89,6 +89,12 @@
 #define HC_ID_PM_BASE               0x80UL
 #define HC_PM_GET_CPU_STATE         BASE_HC_ID(HC_ID, HC_ID_PM_BASE + 0x00UL)
 
+/* TEE */
+#define HC_ID_TEE_BASE              0x90UL
+#define HC_TEE_BOOT_DONE            BASE_HC_ID(HC_ID, HC_ID_TEE_BASE + 0x00UL)
+#define HC_REE_REQUEST_SERVICE      BASE_HC_ID(HC_ID, HC_ID_TEE_BASE + 0x01UL)
+#define HC_TEE_SERVICE_DONE         BASE_HC_ID(HC_ID, HC_ID_TEE_BASE + 0x02UL)
+
 #define ACRN_INVALID_VMID (0xffffU)
 #define ACRN_INVALID_HPA (~0UL)
 
