@@ -179,25 +179,28 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 	struct acrn_vm *vm = vcpu->vm;
 	/* hypercall ID from guest*/
 	uint64_t hypcall_id = vcpu_get_gpreg(vcpu, CPU_REG_R8);
-	uint64_t rax;
+	struct sched_event *event;
+	struct acrn_vm *tee_vm;
+	struct acrn_vcpu *tee_vcpu;
 
 	if (!is_hypercall_from_ring0()) {
 		vcpu_inject_gp(vcpu, 0U);
 		ret = -EACCES;
-	} else if (is_tee_vm(vm)) {
-		rax = vcpu_get_gpreg(vcpu, CPU_REG_RAX);
-		pr_err("TEE EXIT_REASON_VMCALL, nr: 0x%016lx\n", rax);
-		if (rax != OPTEE_VMCALL_SMC) {
-			vcpu_inject_ud(vcpu);
-			ret = -ENODEV;
-		} else {
-			/*
-			 * Return to TEE VM if the hypercall with RAX = 0x6F707400,
-			 * For current TEE VM, its behavior is call this hypercall
-			 * again and again.
-			 */
-			ret = (uint32_t)rax;
+	} else if (hypcall_id == HC_TEE_BOOT_DONE) {
+		resume_ree_vm();
+		ret = 0;
+	} else if (hypcall_id == HC_REE_REQUEST_SERVICE) {
+		tee_vm = get_tee_vm();
+		tee_vcpu = vcpu_from_vid(tee_vm, BSP_CPU_ID);
+		event = &tee_vcpu->events[VCPU_EVENT_VIRTUAL_INTERRUPT];
+		if (event->waiting_thread != NULL) {
+			ret = TEE_SERVICE_ACCEPTED;
+			signal_event(event);
+		}else {
+			ret = TEE_SERVICE_REFUSED;
 		}
+	} else if (hypcall_id == HC_TEE_SERVICE_DONE) {
+		ret = tee_service_done();
 	} else if (hypcall_id == HC_WORLD_SWITCH) {
 		ret = hcall_world_switch(vcpu);
 	} else if (hypcall_id == HC_INITIALIZE_TRUSTY) {

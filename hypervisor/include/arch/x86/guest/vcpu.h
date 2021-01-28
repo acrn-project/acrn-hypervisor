@@ -104,6 +104,11 @@
 #define ACRN_REQUEST_SPLIT_LOCK			10U
 
 /**
+ * @brief Request for REE VM to wait until REE VM boot done
+ */
+#define ACRN_REQUEST_REE_WAIT			11U
+
+/**
  * @}
  */
 /* End of virt_int_injection */
@@ -160,7 +165,8 @@ enum vm_cpu_mode {
 #define	VCPU_EVENT_VIRTUAL_INTERRUPT	1
 #define	VCPU_EVENT_SYNC_WBINVD		2
 #define VCPU_EVENT_SPLIT_LOCK		3
-#define	VCPU_EVENT_NUM			4
+#define VCPU_EVENT_REE_WAIT		4
+#define	VCPU_EVENT_NUM			5
 
 
 enum reset_mode;
