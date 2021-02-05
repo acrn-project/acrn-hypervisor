@@ -96,6 +96,23 @@ struct virtio_i2c_hdr {
 	uint16_t len;       /*msg length*/
 }__attribute__((packed));
 
+struct virtio_i2c_out_hdr {
+	__le16 addr;
+	__le16 padding;
+	__le32 flags;
+};
+
+struct virtio_i2c_in_hdr {
+	uint8_t status;
+};
+
+struct virtio_i2c_req {
+	struct virtio_i2c_out_hdr out_hdr;
+	uint8_t *write_buf;
+	uint8_t *read_buf;
+	struct virtio_i2c_in_hdr in_hdr;
+};
+
 struct native_i2c_adapter {
 	int 		fd;
 	int 		bus;
@@ -390,6 +407,7 @@ native_adapter_find(struct virtio_i2c *vi2c, uint16_t addr)
 	return NULL;
 }
 
+#if 0
 static uint8_t
 native_adapter_proc(struct virtio_i2c *vi2c, struct i2c_msg *msg)
 {
@@ -425,6 +443,7 @@ native_adapter_proc(struct virtio_i2c *vi2c, struct i2c_msg *msg)
 				msg->len);
 	return status;
 }
+#endif
 
 static struct native_i2c_adapter *
 native_adapter_create(int bus, uint16_t client_addr[], int n_client)
@@ -510,10 +529,14 @@ virtio_i2c_proc_thread(void *arg)
 	struct virtio_vq_info *vq = &vi2c->vq;
 	struct iovec iov[3];
 	uint16_t idx, flags[3];
-	struct virtio_i2c_hdr *hdr;
-	struct i2c_msg msg;
-	uint8_t *status;
+	// struct virtio_i2c_hdr *hdr;
+	struct virtio_i2c_out_hdr *out_hdr;
+	struct virtio_i2c_in_hdr *in_hdr;
+	//struct i2c_msg msg;
+	//uint8_t *status;
 	int n;
+	int j;
+	uint8_t *buf;
 
 	for (;;) {
 		pthread_mutex_lock(&vi2c->req_mtx);
@@ -534,6 +557,26 @@ virtio_i2c_proc_thread(void *arg)
 				WPRINTF("virtio_i2c_proc: failed to get iov from virtqueue\n");
 				continue;
 			}
+
+			out_hdr = iov[0].iov_base;
+			WPRINTF("addr=%u, i2c_flags=%u\n", out_hdr->addr, out_hdr->flags);
+
+			buf = iov[1].iov_base;
+			if (flags[1] & VRING_DESC_F_WRITE) {
+				// This is read msg
+				WPRINTF("this is read msg\n");
+			} else {
+				// this is write msg
+				WPRINTF("msg:\n");
+				for (j = 0; j < iov[1].iov_len; j++) {
+					WPRINTF("%x ", buf[j]);
+				}
+				WPRINTF("\n");
+			}
+
+			in_hdr = iov[2].iov_base;
+			WPRINTF("status=%u\n", in_hdr->status);
+#if 0
 			hdr = iov[0].iov_base;
 			msg.addr = hdr->addr;
 			msg.flags = hdr->flags;
@@ -547,6 +590,7 @@ virtio_i2c_proc_thread(void *arg)
 				status = iov[1].iov_base;
 			}
 			*status = native_adapter_proc(vi2c, &msg);
+#endif
 			vq_relchain(vq, idx, 1);
 		} while (vq_has_descs(vq));
 		vq_endchains(vq, 0);

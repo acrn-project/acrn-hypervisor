@@ -193,6 +193,7 @@ enum {
 #define	VIRTIO_TYPE_SCSI	8
 #define	VIRTIO_TYPE_9P		9
 #define	VIRTIO_TYPE_INPUT	18
+//#define VIRTIO_TYPE_I2C		34
 
 /*
  * ACRN virtio device types
@@ -233,6 +234,7 @@ enum {
 #define	VIRTIO_DEV_COREU	0x8608
 #define	VIRTIO_DEV_GPIO		0x8609
 #define VIRTIO_DEV_I2C		0x860a
+
 
 /*
  * VIRTIO_CONFIG_S_NEEDS_RESET is not defined
