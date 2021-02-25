@@ -13,8 +13,8 @@
 #include <string.h>
 #include <pthread.h>
 #include <openssl/md5.h>
-#include <linux/i2c.h>
-#include <linux/i2c-dev.h>
+//#include <linux/i2c.h>
+//#include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
 #include <sys/queue.h>
 #include <stdbool.h>
@@ -26,6 +26,7 @@
 #include "pci_core.h"
 #include "virtio.h"
 #include "acpi.h"
+#include "i2c-dev.h"
 
 /* I2c adapter virtualization architecture
  *
@@ -410,7 +411,7 @@ native_adapter_find(struct virtio_i2c *vi2c, uint16_t addr)
 static uint8_t
 native_adapter_proc(struct virtio_i2c *vi2c, struct i2c_msg *msg)
 {
-	int ret;
+	int ret, i;
 	uint16_t addr;
 	struct i2c_rdwr_ioctl_data work_queue;
 	struct native_i2c_adapter *adapter;
@@ -430,6 +431,13 @@ native_adapter_proc(struct virtio_i2c *vi2c, struct i2c_msg *msg)
 		status = I2C_MSG_ERR;
 	else
 		status = I2C_MSG_OK;
+
+	/// msg->buf[0] = i2c_smbus_read_byte_data(adapter->fd, addr);
+	for (i = 0; i < msg->len; i++)
+		msg->buf[i] = 0x2 + i;
+	status = I2C_MSG_OK;
+	///WPRINTF("msgbuf[0] = 0x%x\n", msg->buf[0]);
+
 	if (msg->len)
 		DPRINTF("i2c_core: i2c msg: flags=0x%x, addr=0x%x, len=0x%x buf=%x\n",
 				msg->flags,
@@ -558,6 +566,7 @@ virtio_i2c_proc_thread(void *arg)
 
 			out_hdr = iov[0].iov_base;
 			msg.addr = (out_hdr->addr >> 1);
+			WPRINTF("================================\n");
 			WPRINTF("addr=%u,msgaddr=%u, i2c_flags=%u, iov0_len=%u\n", out_hdr->addr, msg.addr, out_hdr->flags, iov[0].iov_len);
 
 			msg.buf = iov[1].iov_base;
@@ -578,7 +587,8 @@ virtio_i2c_proc_thread(void *arg)
 
 			in_hdr = iov[2].iov_base;
 			in_hdr->status = native_adapter_proc(vi2c, &msg);
-			WPRINTF("status=%u, iov2_len=%u\n", in_hdr->status, iov[2].iov_len);
+			WPRINTF("================================\n");
+			WPRINTF("\n");
 
 			vq_relchain(vq, idx, iov[0].iov_len + iov[1].iov_len + iov[2].iov_len);
 		} while (vq_has_descs(vq));
