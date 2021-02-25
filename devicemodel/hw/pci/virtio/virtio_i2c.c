@@ -407,7 +407,6 @@ native_adapter_find(struct virtio_i2c *vi2c, uint16_t addr)
 	return NULL;
 }
 
-#if 0
 static uint8_t
 native_adapter_proc(struct virtio_i2c *vi2c, struct i2c_msg *msg)
 {
@@ -426,6 +425,7 @@ native_adapter_proc(struct virtio_i2c *vi2c, struct i2c_msg *msg)
 	work_queue.msgs = msg;
 
 	ret = ioctl(adapter->fd, I2C_RDWR, &work_queue);
+	WPRINTF("i2c ioctl = %d, err=%d, %s\n", ret, errno, strerror(errno));
 	if (ret < 0)
 		status = I2C_MSG_ERR;
 	else
@@ -443,7 +443,6 @@ native_adapter_proc(struct virtio_i2c *vi2c, struct i2c_msg *msg)
 				msg->len);
 	return status;
 }
-#endif
 
 static struct native_i2c_adapter *
 native_adapter_create(int bus, uint16_t client_addr[], int n_client)
@@ -529,14 +528,13 @@ virtio_i2c_proc_thread(void *arg)
 	struct virtio_vq_info *vq = &vi2c->vq;
 	struct iovec iov[3];
 	uint16_t idx, flags[3];
-	// struct virtio_i2c_hdr *hdr;
+	// struct virtio_i2c_out_hdr *hdr;
 	struct virtio_i2c_out_hdr *out_hdr;
 	struct virtio_i2c_in_hdr *in_hdr;
-	//struct i2c_msg msg;
+	struct i2c_msg msg;
 	//uint8_t *status;
 	int n;
 	int j;
-	uint8_t *buf;
 
 	for (;;) {
 		pthread_mutex_lock(&vi2c->req_mtx);
@@ -559,41 +557,33 @@ virtio_i2c_proc_thread(void *arg)
 			}
 
 			out_hdr = iov[0].iov_base;
-			WPRINTF("addr=%u, i2c_flags=%u\n", out_hdr->addr, out_hdr->flags);
+			msg.addr = (out_hdr->addr >> 1);
+			WPRINTF("addr=%u,msgaddr=%u, i2c_flags=%u, iov0_len=%u\n", out_hdr->addr, msg.addr, out_hdr->flags, iov[0].iov_len);
 
-			buf = iov[1].iov_base;
+			msg.buf = iov[1].iov_base;
+			msg.len = iov[1].iov_len;
 			if (flags[1] & VRING_DESC_F_WRITE) {
 				// This is read msg
-				WPRINTF("this is read msg\n");
+				msg.flags = I2C_M_RD;
+				WPRINTF("read msg, len=%u, flag=%u\n", iov[1].iov_len, msg.flags);
 			} else {
 				// this is write msg
-				WPRINTF("msg:\n");
+				msg.flags = 0;
+				WPRINTF("write msg, len=%u, flag=%u\n", iov[1].iov_len, msg.flags);
 				for (j = 0; j < iov[1].iov_len; j++) {
-					WPRINTF("%x ", buf[j]);
+					WPRINTF("%x ", msg.buf[j]);
 				}
 				WPRINTF("\n");
 			}
 
 			in_hdr = iov[2].iov_base;
-			WPRINTF("status=%u\n", in_hdr->status);
-#if 0
-			hdr = iov[0].iov_base;
-			msg.addr = hdr->addr;
-			msg.flags = hdr->flags;
-			if (hdr->len) {
-				msg.buf = iov[1].iov_base;
-				msg.len = iov[1].iov_len;
-				status = iov[2].iov_base;
-			} else {
-				msg.buf = NULL;
-				msg.len = 0;
-				status = iov[1].iov_base;
-			}
-			*status = native_adapter_proc(vi2c, &msg);
-#endif
-			vq_relchain(vq, idx, 1);
+			in_hdr->status = native_adapter_proc(vi2c, &msg);
+			WPRINTF("status=%u, iov2_len=%u\n", in_hdr->status, iov[2].iov_len);
+
+			vq_relchain(vq, idx, iov[0].iov_len + iov[1].iov_len + iov[2].iov_len);
 		} while (vq_has_descs(vq));
-		vq_endchains(vq, 0);
+
+		vq_endchains(vq, 1);
 	}
 }
 
