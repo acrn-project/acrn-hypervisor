@@ -929,12 +929,12 @@ void launch_vms(uint16_t pcpu_id)
 					tee_vm_ptr = &vm_array[vm_id];
 				}
 				prepare_vm(vm_id, vm_config);
+
+				if ((vm_config->guest_flags & GUEST_FLAG_REE) != 0U) {
+					suspend_ree_vm();
+				}
 			}
 		}
-	}
-
-	if ((vm_config->guest_flags & GUEST_FLAG_REE) != 0U) {
-		suspend_ree_vm();
 	}
 }
 
