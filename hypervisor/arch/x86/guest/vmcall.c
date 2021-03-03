@@ -182,6 +182,7 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 	struct sched_event *event;
 	struct acrn_vm *tee_vm;
 	struct acrn_vcpu *tee_vcpu;
+	uint16_t tee_cores_nr;
 
 	if (!is_hypercall_from_ring0()) {
 		vcpu_inject_gp(vcpu, 0U);
@@ -190,8 +191,9 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 		resume_ree_vm();
 		ret = 0;
 	} else if (hypcall_id == HC_NOTIFY_TEE) {
+		tee_cores_nr = (uint16_t)vcpu_get_gpreg(vcpu, CPU_REG_RDI);
 		tee_vm = get_tee_vm();
-		tee_vcpu = vcpu_from_vid(tee_vm, BSP_CPU_ID);
+		tee_vcpu = vcpu_from_vid(tee_vm, tee_cores_nr);
 		event = &tee_vcpu->events[VCPU_EVENT_VIRTUAL_INTERRUPT];
 		if (event->waiting_thread != NULL) {
 			ret = TEE_SERVICE_ACCEPTED;
