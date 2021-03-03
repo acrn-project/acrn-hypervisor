@@ -201,6 +201,9 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 		}
 	} else if (hypcall_id == HC_NOTIFY_REE) {
 		ret = tee_service_done();
+	} else if (hypcall_id == HC_GET_TEE_CORE_NUM) {
+		tee_vm = get_tee_vm();
+		ret = tee_vm->hw.created_vcpus;
 	} else if (hypcall_id == HC_WORLD_SWITCH) {
 		ret = hcall_world_switch(vcpu);
 	} else if (hypcall_id == HC_INITIALIZE_TRUSTY) {
