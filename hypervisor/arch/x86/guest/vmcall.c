@@ -189,7 +189,7 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 	} else if (hypcall_id == HC_TEE_BOOT_DONE) {
 		resume_ree_vm();
 		ret = 0;
-	} else if (hypcall_id == HC_REE_REQUEST_SERVICE) {
+	} else if (hypcall_id == HC_NOTIFY_TEE) {
 		tee_vm = get_tee_vm();
 		tee_vcpu = vcpu_from_vid(tee_vm, BSP_CPU_ID);
 		event = &tee_vcpu->events[VCPU_EVENT_VIRTUAL_INTERRUPT];
@@ -199,7 +199,7 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 		}else {
 			ret = TEE_SERVICE_REFUSED;
 		}
-	} else if (hypcall_id == HC_TEE_SERVICE_DONE) {
+	} else if (hypcall_id == HC_NOTIFY_REE) {
 		ret = tee_service_done();
 	} else if (hypcall_id == HC_WORLD_SWITCH) {
 		ret = hcall_world_switch(vcpu);
