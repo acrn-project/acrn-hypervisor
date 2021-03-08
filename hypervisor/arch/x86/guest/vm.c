@@ -36,6 +36,7 @@
 #include <assign.h>
 #include <vgpio.h>
 #include <ptcm.h>
+#include <rdt.h>
 
 /* Local variables */
 
@@ -786,6 +787,75 @@ void resume_vm_from_s3(struct acrn_vm *vm, uint32_t wakeup_vec)
 	launch_vcpu(bsp);
 }
 
+#define MINBYTES (1 << 10)  /* Working set size ranges from 1 KB */
+#define MAXBYTES (1 << 20)  /* ... up to 1 MB */
+
+uint8_t rdata[MAXBYTES];
+uint8_t wdata[MAXBYTES];
+
+/* TGL platform RDT
+ * cpuid 0x7 0x0
+ * cpuid leaf: 0x7, subleaf: 0x0, 0x0:0xf3bfa7eb:0x18c07fce:0xfc100510
+ *
+ * cpuid 0x10 0x0
+ * cpuid leaf: 0x10, subleaf: 0x0, 0x0:0x4:0x0:0x0
+ *
+ * cpuid 0x10 0x2
+ * cpuid leaf: 0x10, subleaf: 0x2, 0x13:0x0:0x4:0x7
+ */
+static void setup_clos_test(void)
+{
+	uint32_t msr_base = MSR_IA32_L2_MASK_BASE;
+
+	msr_write_pcpu(msr_base, 0x3, 0);
+	msr_write_pcpu(msr_base + 1, 0xc, 0);
+}
+
+static void run(int size, int method)
+{
+	int i;
+	uint64_t start, end;
+	uint8_t tmp;
+
+        start = rdtsc();
+
+        for (i = 0; i < size; i++) {
+
+		if (method == 1) {
+			//msr_write_pcpu(MSR_IA32_PQR_ASSOC, clos2pqr_msr(0), 0);
+			msr_write(MSR_IA32_PQR_ASSOC, 0x000000000);
+		}
+
+		tmp = rdata[i];
+
+		if (method == 1) {
+			//msr_write_pcpu(MSR_IA32_PQR_ASSOC, clos2pqr_msr(1), 0);
+			msr_write(MSR_IA32_PQR_ASSOC, 0x100000000);
+		}
+
+		wdata[i] =tmp;
+	}
+
+	end = rdtsc();
+
+	pr_err("size = %x, time(tsc) = %llu, %s.\n", size, (end - start), (method ? "RDT": "Default"));
+}
+
+static void test(void)
+{
+	int size;
+
+	for (size = MINBYTES; size <= MAXBYTES; size <<= 1 )  {
+		run(size, 0);
+	}
+
+	setup_clos_test();
+
+	for (size = MINBYTES; size <= MAXBYTES; size <<= 1 )  {
+		run(size, 1);
+	}
+}
+
 /**
  * Prepare to create vm/vcpu for vm
  *
@@ -808,6 +878,8 @@ void prepare_vm(uint16_t vm_id, struct acrn_vm_config *vm_config)
 
 		/* start vm BSP automatically */
 		start_vm(vm);
+
+		test();
 
 		pr_acrnlog("Start VM id: %x name: %s", vm_id, vm_config->name);
 	}
