@@ -411,7 +411,7 @@ native_adapter_find(struct virtio_i2c *vi2c, uint16_t addr)
 static uint8_t
 native_adapter_proc(struct virtio_i2c *vi2c, struct i2c_msg *msg)
 {
-	int ret, i;
+	int ret;
 	uint16_t addr;
 	struct i2c_rdwr_ioctl_data work_queue;
 	struct native_i2c_adapter *adapter;
@@ -426,16 +426,24 @@ native_adapter_proc(struct virtio_i2c *vi2c, struct i2c_msg *msg)
 	work_queue.msgs = msg;
 
 	ret = ioctl(adapter->fd, I2C_RDWR, &work_queue);
-	WPRINTF("i2c ioctl = %d, err=%d, %s\n", ret, errno, strerror(errno));
+
+	//if (ret < 0)
+	//	status = I2C_MSG_ERR;
+	//else
+	//	status = I2C_MSG_OK;
+
+	/// msg->buf[0] = i2c_smbus_read_byte_data(adapter->fd, addr);
+	////for (i = 0; i < msg->len; i++)
+	////	msg->buf[i] = 0x2 + i;
+	if (msg->flags & I2C_M_RD)
+		ret = i2c_smbus_read_i2c_block_data(adapter->fd, addr, msg->len, msg->buf);
+	else
+		ret = i2c_smbus_write_i2c_block_data(adapter->fd, addr, msg->len, msg->buf);
+	WPRINTF("smbi2cop = %d, err=%d, %s\n", ret, errno, strerror(errno));
 	if (ret < 0)
 		status = I2C_MSG_ERR;
 	else
 		status = I2C_MSG_OK;
-
-	/// msg->buf[0] = i2c_smbus_read_byte_data(adapter->fd, addr);
-	for (i = 0; i < msg->len; i++)
-		msg->buf[i] = 0x2 + i;
-	status = I2C_MSG_OK;
 	///WPRINTF("msgbuf[0] = 0x%x\n", msg->buf[0]);
 
 	if (msg->len)
