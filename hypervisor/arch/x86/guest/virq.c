@@ -17,6 +17,7 @@
 #include <splitlock.h>
 #include <trace.h>
 #include <logmsg.h>
+#include <tee.h>
 
 #define EXCEPTION_ERROR_CODE_VALID  8U
 
@@ -274,6 +275,9 @@ static bool vcpu_inject_exception(struct acrn_vcpu *vcpu)
 /* Inject external interrupt to guest */
 void vcpu_inject_extint(struct acrn_vcpu *vcpu)
 {
+	if (is_tee_vm(vcpu->vm))
+		return;
+
 	vcpu_make_request(vcpu, ACRN_REQUEST_EXTINT);
 	signal_event(&vcpu->events[VCPU_EVENT_VIRTUAL_INTERRUPT]);
 }
@@ -281,6 +285,9 @@ void vcpu_inject_extint(struct acrn_vcpu *vcpu)
 /* Inject NMI to guest */
 void vcpu_inject_nmi(struct acrn_vcpu *vcpu)
 {
+	if (is_tee_vm(vcpu->vm))
+		return;
+
 	vcpu_make_request(vcpu, ACRN_REQUEST_NMI);
 	signal_event(&vcpu->events[VCPU_EVENT_VIRTUAL_INTERRUPT]);
 }
