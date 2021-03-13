@@ -18,6 +18,7 @@
 #include <mmu.h>
 #include <sprintf.h>
 #include <lapic.h>
+#include <tee.h>
 
 /* stack_frame is linked with the sequence of stack operation in arch_switch_to() */
 struct stack_frame {
@@ -909,6 +910,9 @@ void vcpu_handle_pi_notification(uint32_t vcpu_index)
 	struct acrn_vcpu *vcpu = get_cpu_var(vcpu_array)[vcpu_index];
 
 	ASSERT(vcpu_index < CONFIG_MAX_VM_NUM, "");
+
+	if (is_tee_vm(vcpu->vm))
+		return;
 
 	if (vcpu != NULL) {
 		struct pi_desc *pid = get_pi_desc(vcpu);

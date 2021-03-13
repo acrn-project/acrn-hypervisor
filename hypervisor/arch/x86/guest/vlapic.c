@@ -44,6 +44,7 @@
 #include <ept.h>
 #include <trace.h>
 #include <logmsg.h>
+#include <tee.h>
 #include "vlapic_priv.h"
 
 #define VLAPIC_VERBOS 0
@@ -547,6 +548,9 @@ static void vlapic_accept_intr(struct acrn_vlapic *vlapic, uint32_t vector, bool
 {
 	struct lapic_regs *lapic;
 	ASSERT(vector <= NR_MAX_VECTOR, "invalid vector %u", vector);
+
+	if (is_tee_vm(vlapic2vcpu(vlapic)->vm))
+		return;
 
 	lapic = &(vlapic->apic_page);
 	if ((lapic->svr.v & APIC_SVR_ENABLE) == 0U) {
