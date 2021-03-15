@@ -183,17 +183,17 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 	struct acrn_vm *tee_vm;
 	struct acrn_vcpu *tee_vcpu;
 
-	pr_err("hypercall=0x%lx %s\n", hypcall_id, __func__);
+	/// pr_err("hypercall=0x%lx %s\n", hypcall_id, __func__);
 
 	if (!is_hypercall_from_ring0()) {
 		vcpu_inject_gp(vcpu, 0U);
 		ret = -EACCES;
 	} else if (hypcall_id == HC_TEE_BOOT_DONE) {
-		pr_err("HC_TEE_BOOT_DONE\n");
+		/// pr_err("HC_TEE_BOOT_DONE\n");
 		resume_ree_vm();
 		ret = 0;
 	} else if (hypcall_id == HC_REE_REQUEST_SERVICE) {
-		pr_err("HC_REE_REQUEST_SERVICE\n");
+		/// pr_err("HC_REE_REQUEST_SERVICE\n");
 		tee_vm = get_tee_vm();
 		tee_vcpu = vcpu_from_vid(tee_vm, BSP_CPU_ID);
 		event = &tee_vcpu->events[VCPU_EVENT_VIRTUAL_INTERRUPT];
@@ -204,7 +204,7 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 			ret = TEE_SERVICE_REFUSED;
 		}
 	} else if (hypcall_id == HC_TEE_SERVICE_DONE) {
-		pr_err("HC_TEE_SERVICE_DONE\n");
+		/// pr_err("HC_TEE_SERVICE_DONE\n");
 		ret = tee_service_done();
 	} else if (hypcall_id == HC_WORLD_SWITCH) {
 		ret = hcall_world_switch(vcpu);
