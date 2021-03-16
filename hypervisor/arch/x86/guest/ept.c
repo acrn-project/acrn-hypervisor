@@ -22,7 +22,10 @@
 /* EPT address space will not beyond the platform physical address space */
 #define EPT_PML4_PAGE_NUM	PML4_PAGE_NUM(MAX_PHY_ADDRESS_SPACE)
 #define EPT_PDPT_PAGE_NUM	PDPT_PAGE_NUM(MAX_PHY_ADDRESS_SPACE)
-#define EPT_PD_PAGE_NUM	PD_PAGE_NUM(MAX_PHY_ADDRESS_SPACE)
+/* TODO: need config tool to make sure there's no PCI BAR which size
+ * is larger than 1G (a PD page could cover) */
+#define EPT_PD_PAGE_NUM	(PD_PAGE_NUM(CONFIG_PLATFORM_RAM_SIZE + (MEM_1G << 2U)) + \
+			CONFIG_MAX_PCI_DEV_NUM * 6U)
 
 /* EPT_PT_PAGE_NUM consists of three parts:
  * 1) DRAM - and low MMIO are contiguous (we could assume this because ve820 was build by us),
