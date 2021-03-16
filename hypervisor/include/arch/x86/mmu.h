@@ -41,6 +41,7 @@
 #define MEM_2M		(MEM_1M * 2U)
 #define MEM_1G		(MEM_1M * 1024U)
 #define MEM_2G		(1024UL * 1024UL * 1024UL * 2UL)
+#define MEM_4G		(MEM_1G * 4UL)
 
 #ifndef ASSEMBLER
 
