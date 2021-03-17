@@ -790,8 +790,73 @@ void resume_vm_from_s3(struct acrn_vm *vm, uint32_t wakeup_vec)
 #define MINBYTES (1 << 10)  /* Working set size ranges from 1 KB */
 #define MAXBYTES (1 << 20)  /* ... up to 1 MB */
 
-uint8_t rdata[MAXBYTES];
-uint8_t wdata[MAXBYTES];
+uint8_t rdata[MAXBYTES] __aligned(64);
+uint8_t wdata[MAXBYTES] __aligned(64);
+
+// #define __iomem __attribute__((noderef, address_space(__iomem)))
+
+#ifdef CHKMEM
+
+static void setupmem(void)
+{
+	int i;
+
+	for (i = 0; i < 64; i++) {
+		rdata[i] = i;
+		wdata[i] = 64 + i;
+	}
+}
+
+static void checkmem(void)
+{
+	int i;
+
+	for (i = 0; i < 64; i+=8) {
+		pr_err("wdata: %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx",
+			wdata[i], wdata[i+1], wdata[i+2], wdata[i+3],
+			wdata[i+4], wdata[i+5], wdata[i+6], wdata[i+7]);
+	}
+}
+
+#endif
+
+static void movdir64b(void *dst, const void *src)
+{
+	const struct { char _[64]; } *__src = src;
+	struct { char _[64]; } *__dst = dst;
+
+	asm volatile(".byte 0x66, 0x0f, 0x38, 0xf8, 0x02"
+		     : "+m" (*__dst)
+		     :  "m" (*__src), "a" (__dst), "d" (__src));
+}
+
+static void movdir64b_test(void *dst, const void *src, int count)
+{
+	const uint8_t *from = src;
+	const uint8_t *end = from + count * 64;
+	uint64_t tsc_start, tsc_end;
+
+#ifdef CHKMEM
+	setupmem();
+#endif
+
+	tsc_start = rdtsc();
+
+	while (from < end) {
+		movdir64b(dst, from);
+		from += 64;
+		dst += 64;
+	}
+
+	tsc_end = rdtsc();
+
+#ifdef CHKMEM
+	checkmem();
+#endif
+
+	pr_err("movdir64b size = %x, time(tsc) = %llu.\n", count * 64, (tsc_end - tsc_start));
+}
+
 
 /* TGL platform RDT
  * cpuid 0x7 0x0
@@ -843,15 +908,20 @@ static void run(int size, int method)
 
 static void test(void)
 {
-	int size;
+	int size, count;
 
-	for (size = MINBYTES; size <= MAXBYTES; size <<= 1 )  {
+	for (size = MINBYTES; size <= MAXBYTES; size <<= 1) {
+		count = size >> 6; /* must be 64-bytes aligned */
+		movdir64b_test(wdata, rdata, count);
+	}
+
+	for (size = MINBYTES; size <= MAXBYTES; size <<= 1) {
 		run(size, 0);
 	}
 
 	setup_clos_test();
 
-	for (size = MINBYTES; size <= MAXBYTES; size <<= 1 )  {
+	for (size = MINBYTES; size <= MAXBYTES; size <<= 1) {
 		run(size, 1);
 	}
 }
