@@ -652,6 +652,13 @@ void guest_cpuid(struct acrn_vcpu *vcpu, uint32_t *eax, uint32_t *ebx, uint32_t 
 	uint32_t leaf = *eax;
 	uint32_t subleaf = *ecx;
 
+	if (leaf == 0x1f || leaf == 0x1b) {
+		cpuid_subleaf(leaf, subleaf, eax, ebx, ecx, edx);
+		pr_fatal("%s 0x%x, 0x%x --- 0x%x, 0x%x, 0x%x, 0x%x___",
+			__func__, leaf, subleaf, *eax, *ebx, *ecx, *edx);
+		return;
+	}
+
 	/* vm related */
 	if (!is_percpu_related(leaf)) {
 		const struct vcpuid_entry *entry = find_vcpuid_entry(vcpu, leaf, subleaf);
@@ -702,4 +709,5 @@ void guest_cpuid(struct acrn_vcpu *vcpu, uint32_t *eax, uint32_t *ebx, uint32_t 
 	}
 
 	guest_limit_cpuid(vcpu, leaf, eax, ebx, ecx, edx);
+
 }

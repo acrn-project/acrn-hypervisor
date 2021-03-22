@@ -119,9 +119,11 @@ uint64_t prepare_trampoline(void)
 			(size_t)size);
 	update_trampoline_code_refs(dest_pa);
 
+	cpu_memory_barrier();
 	for (i = 0UL; i < size; i = i + CACHE_LINE_SIZE) {
-		clflush(hpa2hva(dest_pa + i));
+		clflushopt(hpa2hva(dest_pa + i));
 	}
+	cpu_memory_barrier();
 
 	trampoline_start16_paddr = dest_pa;
 
