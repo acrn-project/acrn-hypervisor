@@ -55,6 +55,11 @@
 #define EPT_EXE			(1UL << 2U)
 
 /**
+ * @brief EPT memory access right is read only.
+ */
+#define EPT_RX			(EPT_RD | EPT_EXE)
+
+/**
  * @brief EPT memory access right is read/write and executable.
  */
 #define EPT_RWX			(EPT_RD | EPT_WR | EPT_EXE)

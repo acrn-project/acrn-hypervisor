@@ -292,7 +292,7 @@ static void prepare_prelaunched_vm_memmap(struct acrn_vm *vm, const struct acrn_
 	if (vm_config->os_config.kernel_type == KERNEL_TEE) {
 		ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp,
 			ree_hpa, TEE_GPA_MAPPING_TO_REE_MEM, ree_size,
-			EPT_WB | EPT_WR);
+			EPT_WB | EPT_RX);
 	}
 
 	/* Map the 2M shared memory for TEE/REE, start from: GPA 4G - 2M, size: 2M */
