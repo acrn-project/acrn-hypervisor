@@ -1,4 +1,4 @@
-<acrn-config board="tgl-rvp">
+<acrn-config board="adl-rvp">
 	<BIOS_INFO>
 	BIOS Information
 	Vendor: Intel Corporation
