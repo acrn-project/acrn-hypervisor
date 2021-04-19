@@ -10,7 +10,7 @@
 #include <irq.h>
 #include <tee.h>
 
-uint8_t tee_smc_shared_mem[TEE_SMC_CALL_SHARED_PAGE_SIZE];
+uint8_t *tee_smc_shared_mem;
 
 bool is_tee_vm(const struct acrn_vm *vm)
 {
@@ -54,4 +54,13 @@ int32_t tee_service_done(void)
 	vlapic_set_intr(vcpu, TEE_REE_NOTIFICATION_VECTOR, LAPIC_TRIG_EDGE);
 
 	return 0;
+}
+
+void reserve_buffer_for_tee_shared_mem(void)
+{
+	uint64_t base;
+
+	base = e820_alloc_memory(TEE_SMC_CALL_SHARED_PAGE_SIZE, ~0UL);
+
+	tee_smc_shared_mem = (uint8_t *)base;
 }
