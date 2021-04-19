@@ -61,9 +61,17 @@
 #define EPT_PT_PAGE_NUM	(PT_PAGE_NUM(CONFIG_PLATFORM_RAM_SIZE + MEM_4G) + \
 			CONFIG_MAX_PCI_DEV_NUM * 6U)
 
+#ifndef INTEL_TEE
+#define INTEL_TEE
+#endif
+#ifdef INTEL_TEE
+#define EPT_PAGE_NUM 64U
+#else
 /* must be a multiple of 64 */
 #define EPT_PAGE_NUM	(roundup((EPT_PML4_PAGE_NUM + EPT_PDPT_PAGE_NUM + \
 			EPT_PD_PAGE_NUM + EPT_PT_PAGE_NUM), 64U))
+#endif
+
 #define TOTAL_EPT_4K_PAGES_SIZE (CONFIG_MAX_VM_NUM * (EPT_PAGE_NUM) * PAGE_SIZE)
 
 static struct page *ept_pages[CONFIG_MAX_VM_NUM];
