@@ -30,6 +30,7 @@
 #include <vpci.h>
 #include <ivshmem.h>
 #include <rtcm.h>
+#include <tee.h>
 
 #define CPU_UP_TIMEOUT		100U /* millisecond */
 #define CPU_DOWN_TIMEOUT	100U /* millisecond */
@@ -255,10 +256,13 @@ void init_pcpu_post(uint16_t pcpu_id)
 
 		/*
 		 * Reserve memory from platform E820 for EPT 4K pages for all VMs
+		 * Reserve memory for tee shared memory
 		 */
 		reserve_buffer_for_ept_pages();
+		reserve_buffer_for_tee_shared_mem();
 
 		pcpu_sync = ALL_CPUS_MASK;
+
 		/* Start all secondary cores */
 		startup_paddr = prepare_trampoline();
 		if (!start_pcpus(AP_MASK)) {

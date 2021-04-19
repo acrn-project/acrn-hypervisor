@@ -15,7 +15,7 @@
 /* Shared memory for TEE/REE, starts from: GPA 4G - 2M, size: 2M */
 #define TEE_SMC_CALL_SHARED_PAGE_GPA (4UL * 1024UL * 1024UL * 1024UL - 2UL * 1024UL * 1024UL)
 #define TEE_SMC_CALL_SHARED_PAGE_SIZE (2UL * 1024UL * 1024UL)
-extern uint8_t tee_smc_shared_mem[TEE_SMC_CALL_SHARED_PAGE_SIZE];
+extern uint8_t *tee_smc_shared_mem;
 
 #define OPTEE_VMCALL_SMC 0x6F707400UL
 
@@ -31,5 +31,6 @@ bool is_tee_vm(const struct acrn_vm *vm);
 void suspend_ree_vm(void);
 void resume_ree_vm(void);
 int32_t tee_service_done(void);
+void reserve_buffer_for_tee_shared_mem(void);
 
 #endif /* TEE_H_ */
