@@ -715,6 +715,7 @@ static void dump_vcpu_reg(void *data)
 
 	len = snprintf(str, size,
 		"=  VM ID %d ==== CPU ID %hu========================\r\n"
+		"=  ac_lock_start_nr=%u   ac_lock_end_nr=%u\r\n"
 		"=  RIP=0x%016lx  RSP=0x%016lx RFLAGS=0x%016lx\r\n"
 		"=  CR0=0x%016lx  CR2=0x%016lx\r\n"
 		"=  CR3=0x%016lx  CR4=0x%016lx\r\n"
@@ -724,6 +725,7 @@ static void dump_vcpu_reg(void *data)
 		"=  R10=0x%016lx  R11=0x%016lx R12=0x%016lx\r\n"
 		"=  R13=0x%016lx  R14=0x%016lx  R15=0x%016lx\r\n",
 		vcpu->vm->vm_id, vcpu->vcpu_id,
+		vcpu->arch.ac_lock_start, vcpu->arch.ac_lock_end,
 		vcpu_get_rip(vcpu),
 		vcpu_get_gpreg(vcpu, CPU_REG_RSP),
 		vcpu_get_rflags(vcpu),

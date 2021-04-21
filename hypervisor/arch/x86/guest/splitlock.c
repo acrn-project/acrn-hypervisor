@@ -32,6 +32,7 @@ void vcpu_kick_splitlock_emulation(struct acrn_vcpu *cur_vcpu)
 
 	if (cur_vcpu->vm->hw.created_vcpus > 1U) {
 		get_split_lock(cur_vcpu->vm);
+		cur_vcpu->arch.ac_lock_start++;
 
 		foreach_vcpu(i, cur_vcpu->vm, other) {
 			if (other != cur_vcpu) {
@@ -66,6 +67,7 @@ void vcpu_complete_splitlock_emulation(struct acrn_vcpu *cur_vcpu)
 			}
 		}
 
+		cur_vcpu->arch.ac_lock_end++;
 		put_split_lock(cur_vcpu->vm);
 	}
 }
@@ -73,7 +75,7 @@ void vcpu_complete_splitlock_emulation(struct acrn_vcpu *cur_vcpu)
 int32_t emulate_splitlock(struct acrn_vcpu *vcpu, uint32_t exception_vector, bool *queue_exception)
 {
 	int32_t status = 0;
-	uint8_t inst[1];
+	uint8_t inst[8];
 	uint32_t err_code = 0U;
 	uint64_t fault_addr;
 
@@ -89,7 +91,11 @@ int32_t emulate_splitlock(struct acrn_vcpu *vcpu, uint32_t exception_vector, boo
 	if (is_ac_enabled() && !is_guest_ac_enabled(vcpu)) {
 		switch (exception_vector) {
 		case IDT_AC:
-			status = copy_from_gva(vcpu, inst, vcpu_get_rip(vcpu), 1U, &err_code, &fault_addr);
+			status = copy_from_gva(vcpu, inst, vcpu_get_rip(vcpu), 8U, &err_code, &fault_addr);
+			pr_err("RIP = 0x%016llx", exec_vmread(VMX_GUEST_RIP));
+			pr_err("inst0: %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx",
+				inst[0],inst[1],inst[2],inst[3],inst[4],inst[5],inst[6],inst[7]);
+
 			if (status < 0) {
 				pr_err("Error copy instruction from Guest!");
 				if (status == -EFAULT) {

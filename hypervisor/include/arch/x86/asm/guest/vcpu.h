@@ -250,6 +250,8 @@ struct acrn_vcpu_arch {
 	uint8_t lapic_mask;
 	bool irq_window_enabled;
 	bool emulating_lock;
+	uint32_t ac_lock_start;
+	uint32_t ac_lock_end;
 	uint32_t nrexits;
 
 	/* VCPU context state information */
