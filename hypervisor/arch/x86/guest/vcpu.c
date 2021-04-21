@@ -250,6 +250,8 @@ static void vcpu_reset_internal(struct acrn_vcpu *vcpu, enum reset_mode mode)
 	vcpu->arch.cur_context = NORMAL_WORLD;
 	vcpu->arch.irq_window_enabled = false;
 	vcpu->arch.emulating_lock = false;
+	vcpu->arch.ac_lock_start = 0U;
+	vcpu->arch.ac_lock_end = 0U;
 	(void)memset((void *)vcpu->arch.vmcs, 0U, PAGE_SIZE);
 
 	for (i = 0; i < NR_WORLD; i++) {
