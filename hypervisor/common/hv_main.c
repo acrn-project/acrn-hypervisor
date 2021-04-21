@@ -14,6 +14,17 @@
 #include <sprintf.h>
 #include <trace.h>
 #include <logmsg.h>
+#include <tee.h>
+
+extern uint64_t tsc_2;
+extern uint64_t tsc_3;
+extern uint64_t tsc_4;
+extern uint64_t tsc_9;
+extern uint64_t tsc_10;
+extern uint64_t tsc_11;
+extern uint64_t notify_tee;
+extern uint64_t notify_ree;
+extern bool print_info;
 
 void vcpu_thread(struct thread_object *obj)
 {
@@ -46,6 +57,19 @@ void vcpu_thread(struct thread_object *obj)
 		profiling_vmenter_handler(vcpu);
 
 		TRACE_2L(TRACE_VM_ENTER, 0UL, 0UL);
+
+		if (is_tee_vm(vcpu->vm)) {
+			tsc_4 = rdtsc();
+		} else {
+			tsc_11 = rdtsc();
+			if (print_info) {
+				pr_err("tsc_2 = %lu, tsc_3 = %lu, tsc_4 = %lu", tsc_2, tsc_3, tsc_4);
+				pr_err("tsc_9 = %lu, tsc_10 = %lu, tsc_11 = %lu", tsc_9, tsc_10, tsc_11);
+				pr_err("notify_tee = %lu, notify_ree = %lu", notify_tee, notify_ree);
+				print_info = false;
+			}
+		}
+
 		ret = run_vcpu(vcpu);
 		if (ret != 0) {
 			pr_fatal("vcpu resume failed");

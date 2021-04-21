@@ -15,6 +15,16 @@
 #include <logmsg.h>
 #include <tee.h>
 
+uint64_t tsc_2 = 0UL;
+uint64_t tsc_3 = 0UL;
+uint64_t tsc_4 = 0UL;
+uint64_t tsc_9 = 0UL;
+uint64_t tsc_10 = 0UL;
+uint64_t tsc_11 = 0UL;
+uint64_t notify_tee = 0UL;
+uint64_t notify_ree = 0UL;
+bool print_info = false;
+
 struct hc_dispatch {
 	/* handler(struct acrn_vm *sos_vm, struct acrn_vm *target_vm, uint64_t param1, uint64_t param2) */
 	int32_t (*handler)(struct acrn_vm *, struct acrn_vm *, uint64_t, uint64_t);
@@ -183,32 +193,38 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 	struct acrn_vm *tee_vm;
 	struct acrn_vcpu *tee_vcpu;
 
-	pr_err("hypercall=0x%lx %s\n", hypcall_id, __func__);
+	// pr_err("hypercall=0x%lx %s\n", hypcall_id, __func__);
 
 	if (!is_hypercall_from_ring0()) {
 		vcpu_inject_gp(vcpu, 0U);
 		ret = -EACCES;
 	} else if (hypcall_id == HC_TEE_BOOT_DONE) {
-		pr_err("HC_TEE_BOOT_DONE\n");
+		// pr_err("HC_TEE_BOOT_DONE\n");
 		resume_ree_vm();
 		ret = 0;
 	} else if (hypcall_id == HC_NOTIFY_TEE) {
-		pr_err("HC_NOTIFY_TEE\n");
-		uint16_t tee_cores_nr = (uint16_t)vcpu_get_gpreg(vcpu, CPU_REG_RDI);
+		// pr_err("HC_NOTIFY_TEE\n");
+		notify_tee++;
+		// uint16_t tee_cores_nr = (uint16_t)vcpu_get_gpreg(vcpu, CPU_REG_RDI);
 		tee_vm = get_tee_vm();
-		tee_vcpu = vcpu_from_vid(tee_vm, tee_cores_nr);
+		tee_vcpu = vcpu_from_vid(tee_vm, BSP_CPU_ID);
 		event = &tee_vcpu->events[VCPU_EVENT_VIRTUAL_INTERRUPT];
+
 		if (event->waiting_thread != NULL) {
 			ret = TEE_SERVICE_ACCEPTED;
+			tsc_2 = rdtsc();
 			signal_event(event);
 		}else {
 			ret = TEE_SERVICE_REFUSED;
 		}
 	} else if (hypcall_id == HC_NOTIFY_REE) {
-		pr_err("HC_NOTIFY_REE\n");
+		// pr_err("HC_NOTIFY_REE\n");
+		tsc_9 = rdtsc();
 		ret = tee_service_done();
+		notify_ree++;
+		print_info = true;
 	} else if (hypcall_id == HC_GET_TEE_CORE_NUM) {
-		pr_err("HC_GET_TEE_CORE_NUM\n");
+		// pr_err("HC_GET_TEE_CORE_NUM\n");
 		ret = vcpu->vm->hw.created_vcpus;
 	} else if (hypcall_id == HC_WORLD_SWITCH) {
 		ret = hcall_world_switch(vcpu);
