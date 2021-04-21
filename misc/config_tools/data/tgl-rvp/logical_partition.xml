@@ -65,7 +65,7 @@
         <guest_flag/>
     </guest_flags>
     <cpu_affinity>
-        <pcpu_id>11</pcpu_id>
+        <pcpu_id>5</pcpu_id>
     </cpu_affinity>
     <clos>
         <vcpu_clos>0</vcpu_clos>
@@ -125,7 +125,8 @@
         <guest_flag/>
     </guest_flags>
     <cpu_affinity>
-        <pcpu_id>4</pcpu_id>
+        <pcpu_id>7</pcpu_id>
+        <pcpu_id>8</pcpu_id>
     </cpu_affinity>
     <clos>
         <vcpu_clos>0</vcpu_clos>

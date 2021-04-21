@@ -654,8 +654,8 @@ void guest_cpuid(struct acrn_vcpu *vcpu, uint32_t *eax, uint32_t *ebx, uint32_t 
 
 	if (leaf == 0x1f || leaf == 0x1b) {
 		cpuid_subleaf(leaf, subleaf, eax, ebx, ecx, edx);
-		pr_fatal("%s 0x%x, 0x%x --- 0x%x, 0x%x, 0x%x, 0x%x___",
-			__func__, leaf, subleaf, *eax, *ebx, *ecx, *edx);
+		//pr_fatal("%s 0x%x, 0x%x --- 0x%x, 0x%x, 0x%x, 0x%x___",
+		//	__func__, leaf, subleaf, *eax, *ebx, *ecx, *edx);
 		return;
 	}
 

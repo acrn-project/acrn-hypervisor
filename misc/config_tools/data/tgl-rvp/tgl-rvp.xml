@@ -2,8 +2,8 @@
 	<BIOS_INFO>
 	BIOS Information
 	Vendor: Intel Corporation
-	Version: ADLIFPI1.R00.2101.B00.2103020814
-	Release Date: 03/02/2021
+	Version: ADLPFWI1.R00.2144.B00.2104011314
+	Release Date: 04/01/2021
 	</BIOS_INFO>
 
 	<BASE_BOARD_INFO>
@@ -79,7 +79,7 @@
 	Region 0: Memory at 50400000 (32-bit, non-prefetchable) [size=4K]
 	00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (16) I219-V
 	Region 0: Memory at 88300000 (32-bit, non-prefetchable) [disabled] [size=128K]
-	01:00.0 Non-Volatile memory controller: Phison Electronics Corporation E12 NVMe Controller (rev 01)
+	01:00.0 Non-Volatile memory controller: Intel Corporation SSD Pro 7600p/760p/E 6100p Series (rev 03)
 	Region 0: Memory at 88200000 (64-bit, non-prefetchable) [size=16K]
 	</PCI_DEVICE>
 
@@ -115,12 +115,12 @@
 	00:1f.4 0c05: 8086:51a3
 	00:1f.5 0c80: 8086:51a4
 	00:1f.6 0200: 8086:1a1f
-	01:00.0 0108: 1987:5012 (rev 01)
+	01:00.0 0108: 8086:f1a6 (rev 03)
 	</PCI_VID_PID>
 
 	<WAKE_VECTOR_INFO>
-	#define WAKE_VECTOR_32          0x46A5C00CUL
-	#define WAKE_VECTOR_64          0x46A5C018UL
+	#define WAKE_VECTOR_32          0x46A6600CUL
+	#define WAKE_VECTOR_64          0x46A66018UL
 	</WAKE_VECTOR_INFO>
 
 	<RESET_REGISTER_INFO>
@@ -214,7 +214,12 @@
 	</CX_INFO>
 
 	<PX_INFO>
-	/* Px data is not available */
+	{0x321UL, 0x00UL, 0x0AUL, 0x0AUL, 0x001800UL, 0x001800UL},	/* P0 */
+	{0x320UL, 0x00UL, 0x0AUL, 0x0AUL, 0x000800UL, 0x000800UL},	/* P1 */
+	{0x2BCUL, 0x00UL, 0x0AUL, 0x0AUL, 0x000700UL, 0x000700UL},	/* P2 */
+	{0x258UL, 0x00UL, 0x0AUL, 0x0AUL, 0x000600UL, 0x000600UL},	/* P3 */
+	{0x1F4UL, 0x00UL, 0x0AUL, 0x0AUL, 0x000500UL, 0x000500UL},	/* P4 */
+	{0x190UL, 0x00UL, 0x0AUL, 0x0AUL, 0x000400UL, 0x000400UL},	/* P5 */
 	</PX_INFO>
 
 	<MMCFG_BASE_INFO>
@@ -227,9 +232,6 @@
 	</TPM_INFO>
 
 	<CLOS_INFO>
-	rdt resources supported: L2
-	rdt resource clos max: 16
-	rdt resource mask max: '0xffff'
 	</CLOS_INFO>
 
 	<IOMEM_INFO>
@@ -238,12 +240,13 @@
 	0009f000-000fffff : Reserved
 	  000a0000-000bffff : PCI Bus 0000:00
 	  000f0000-000fffff : System ROM
-	00100000-40aaafff : System RAM
-	40aab000-40aabfff : Reserved
-	40aac000-43694fff : System RAM
-	43695000-46a03fff : Reserved
-	46a04000-46aebfff : ACPI Non-volatile Storage
-	46aec000-46bfefff : ACPI Tables
+	00100000-40acefff : System RAM
+	40acf000-40acffff : Reserved
+	40ad0000-4368efff : System RAM
+	4368f000-436f7fff : Unknown E820 type
+	436f8000-469fdfff : Reserved
+	469fe000-46ae5fff : ACPI Non-volatile Storage
+	46ae6000-46bfefff : ACPI Tables
 	46bff000-46bfffff : System RAM
 	46c00000-491fffff : Reserved
 	49e00000-503fffff : Reserved
@@ -285,9 +288,9 @@
 	  fee00000-fee00fff : Local APIC
 	ff000000-ffffffff : Reserved
 	100000000-4afbfffff : System RAM
-	  142800000-1438011e0 : Kernel code
-	  1438011e1-143fb247f : Kernel data
-	  144625000-144bfffff : Kernel bss
+	  3eb600000-3ec6011f0 : Kernel code
+	  3ec6011f1-3ecfeb2ff : Kernel data
+	  3ed6d8000-3eddfffff : Kernel bss
 	4afc00000-4afffffff : RAM buffer
 	4000000000-7fffffffff : PCI Bus 0000:00
 	  4000000000-400fffffff : 0000:00:02.0
@@ -330,7 +333,6 @@
 	<BLOCK_DEVICE_INFO>
 	/dev/nvme0n1p3: TYPE="ext4"
 	/dev/sda3: TYPE="ext4"
-	/dev/sda4: TYPE="ext4"
 	</BLOCK_DEVICE_INFO>
 
 	<TTYS_INFO>
@@ -342,11 +344,11 @@
 	</AVAILABLE_IRQ_INFO>
 
 	<TOTAL_MEM_INFO>
-	16180016 kB
+	16176448 kB
 	</TOTAL_MEM_INFO>
 
 	<CPU_PROCESSOR_INFO>
-	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9
 	</CPU_PROCESSOR_INFO>
 
 	<MAX_MSIX_TABLE_NUM>

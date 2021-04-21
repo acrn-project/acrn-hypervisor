@@ -330,12 +330,22 @@ static inline void handle_irq(const struct irq_desc *desc)
 	}
 }
 
+extern uint64_t tsc_3;
+extern uint64_t tsc_10;
+
 /* do_IRQ() */
 void dispatch_interrupt(const struct intr_excp_ctx *ctx)
 {
 	uint32_t vr = ctx->vector;
 	uint32_t irq = vector_to_irq[vr];
 	struct irq_desc *desc;
+
+	// if ((get_pcpu_id() == 4U) && ((vr == POSTED_INTR_VECTOR) || (vr == POSTED_INTR_VECTOR + 1) || (vr == NOTIFY_VCPU_VECTOR))) {
+	if (((get_pcpu_id() == 7U) || (get_pcpu_id() == 8U)) && (vr == NOTIFY_VCPU_VECTOR)) {
+		tsc_10 = rdtsc();
+	} else if ((get_pcpu_id() == 5U) && (vr == NOTIFY_VCPU_VECTOR)) {
+		tsc_3 = rdtsc();
+	}
 
 	/* The value from vector_to_irq[] must be:
 	 * IRQ_INVALID, which means the vector is not allocated;
