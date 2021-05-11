@@ -73,6 +73,7 @@ static void *get_kernel_load_addr(struct acrn_vm *vm)
 		load_addr = (void *)zeropage;
 		break;
 	case KERNEL_ZEPHYR:
+	case KERNEL_TEE:
 		load_addr = (void *)vm_config->os_config.kernel_load_addr;
 		break;
 	default:
