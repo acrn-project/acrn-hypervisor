@@ -36,6 +36,7 @@
 #include <assign.h>
 #include <vgpio.h>
 #include <rtcm.h>
+#include <tee.h>
 
 /* Local variables */
 
@@ -231,6 +232,8 @@ static void prepare_prelaunched_vm_memmap(struct acrn_vm *vm, const struct acrn_
 	bool is_hpa1 = true;
 	uint64_t base_hpa = vm_config->memory.start_hpa;
 	uint64_t remaining_hpa_size = vm_config->memory.size;
+	uint64_t ree_hpa = vm_config->memory.ree_start_hpa;
+	uint64_t ree_size = vm_config->memory.ree_size;
 	uint32_t i;
 
 	for (i = 0U; i < vm->e820_entry_num; i++) {
@@ -275,6 +278,13 @@ static void prepare_prelaunched_vm_memmap(struct acrn_vm *vm, const struct acrn_
 			base_hpa = vm_config->memory.start_hpa2;
 			remaining_hpa_size = vm_config->memory.size_hpa2;
 		}
+	}
+
+	/* For TEE VM, mapping the REE VM memory to its GPA starts from 64G */
+	if (vm_config->os_config.kernel_type == KERNEL_TEE) {
+		ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp,
+			ree_hpa, TEE_GPA_MAPPING_TO_REE_MEM, ree_size,
+			EPT_WB | EPT_RD);
 	}
 
 	for (i = 0U; i < MAX_MMIO_DEV_NUM; i++) {

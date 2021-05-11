@@ -226,6 +226,7 @@ int32_t vm_sw_loader(struct acrn_vm *vm)
 		prepare_loading_bzimage(vm, vcpu);
 		break;
 	case KERNEL_ZEPHYR:
+	case KERNEL_TEE:
 		prepare_loading_rawimage(vm);
 		break;
 	default:
