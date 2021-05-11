@@ -15,6 +15,7 @@
 #include <sgx.h>
 #include <guest_pm.h>
 #include <ucode.h>
+#include <cpufeatures.h>
 #include <rdt.h>
 #include <trace.h>
 #include <logmsg.h>
@@ -39,6 +40,7 @@ static const uint32_t emulated_guest_msrs[NUM_GUEST_MSRS] = {
 	 * MSRs don't need isolation between worlds
 	 * Number of entries: NUM_COMMON_MSRS
 	 */
+	MSR_IA32_UMWAIT_CONTROL,
 	MSR_IA32_TSC_DEADLINE,
 	MSR_IA32_BIOS_UPDT_TRIG,
 	MSR_IA32_BIOS_SIGN_ID,
@@ -551,6 +553,16 @@ int32_t rdmsr_vmexit_handler(struct acrn_vcpu *vcpu)
 		}
 		break;
 	}
+	case MSR_IA32_UMWAIT_CONTROL:
+	{
+		/* Feature X86_FEATURE_WAITPKG is always presented */
+		if (pcpu_has_cap(X86_FEATURE_WAITPKG)) {
+			v = vcpu_get_guest_msr(vcpu, msr);
+		} else {
+			err = -EACCES;
+		}
+		break;
+	}
 	case MSR_TEST_CTL:
 	{
 		/* If has MSR_TEST_CTL, give emulated value
@@ -900,6 +912,17 @@ int32_t wrmsr_vmexit_handler(struct acrn_vcpu *vcpu)
 			vcpu->arch.iwkey_copy_status = 1UL;
 		} else {
 			err = -EINVAL;
+		}
+		break;
+	}
+	case MSR_IA32_UMWAIT_CONTROL:
+	{
+		/* Feature X86_FEATURE_WAITPKG is always presented */
+		if (pcpu_has_cap(X86_FEATURE_WAITPKG)) {
+			vcpu_set_guest_msr(vcpu, msr, v);
+			msr_write(msr, v);
+		} else {
+			err = -EACCES;
 		}
 		break;
 	}
