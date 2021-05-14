@@ -474,6 +474,14 @@ static void prepare_sos_vm_memmap(struct acrn_vm *vm)
 	 */
 	ept_del_mr(vm, pml4_page, PRE_RTVM_SW_SRAM_BASE_GPA, PRE_RTVM_SW_SRAM_END_GPA - PRE_RTVM_SW_SRAM_BASE_GPA);
 #endif
+
+	if ((vm_config->guest_flags & GUEST_FLAG_REE) != 0U) {
+		ept_del_mr(vm, pml4_page, TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE);
+		/* Map the 2M shared memory for REE, start from: GPA 4G - 2M, size: 2M */
+		ept_add_mr(vm, pml4_page, hva2hpa(tee_smc_shared_mem),
+			   TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE,
+			   EPT_RWX | EPT_WB);
+	}
 }
 
 /* Add EPT mapping of EPC reource for the VM */
@@ -934,6 +942,9 @@ void launch_vms(uint16_t pcpu_id)
 			if (pcpu_id == get_configured_bsp_pcpu_id(vm_config)) {
 				if (vm_config->load_order == SOS_VM) {
 					sos_vm_ptr = &vm_array[vm_id];
+					if ((vm_config->guest_flags & GUEST_FLAG_REE) != 0U) {
+						ree_vm_ptr = &vm_array[vm_id];
+					}
 				} else if ((vm_config->guest_flags & GUEST_FLAG_REE) != 0U) {
 					ree_vm_ptr = &vm_array[vm_id];
 				} else if ((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) {
