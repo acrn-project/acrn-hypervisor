@@ -297,16 +297,19 @@ static void prepare_prelaunched_vm_memmap(struct acrn_vm *vm, const struct acrn_
 	}
 
 	/* For TEE VM, mapping the REE VM memory to its GPA starts from 64G */
-	if (vm_config->os_config.kernel_type == KERNEL_TEE) {
+	if ((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) {
 		ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp,
 			ree_hpa, TEE_GPA_MAPPING_TO_REE_MEM, ree_size,
 			EPT_WB | EPT_RD);
 	}
 
-	/* Map the 2M shared memory for TEE/REE, start from: GPA 4G - 2M, size: 2M */
-	ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp, hva2hpa(tee_smc_shared_mem),
-		   TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE,
-		   EPT_RWX | EPT_WB);
+	if (((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) ||
+	    ((vm_config->guest_flags & GUEST_FLAG_REE) != 0U)) {
+		/* Map the 2M shared memory for TEE/REE, start from: GPA 4G - 2M, size: 2M */
+		ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp, hva2hpa(tee_smc_shared_mem),
+			   TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE,
+			   EPT_RWX | EPT_WB);
+	}
 
 	for (i = 0U; i < MAX_MMIO_DEV_NUM; i++) {
 		(void)assign_mmio_dev(vm, &vm_config->mmiodevs[i]);
