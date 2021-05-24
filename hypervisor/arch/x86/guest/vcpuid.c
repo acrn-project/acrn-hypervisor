@@ -349,6 +349,7 @@ int32_t set_vcpuid_entries(struct acrn_vm *vm)
 	uint32_t limit;
 	uint32_t i, j;
 	struct cpuinfo_x86 *cpu_info = get_pcpu_info();
+	struct acrn_vm_config *vm_config = get_vm_config(vm->vm_id);
 
 	init_vcpuid_entry(0U, 0U, 0U, &entry);
 	if (cpu_info->cpuid_level < 0x16U) {
@@ -389,17 +390,42 @@ int32_t set_vcpuid_entries(struct acrn_vm *vm)
 				if (is_vsgx_supported(vm->vm_id)) {
 					entry.ebx |= CPUID_EBX_SGX;
 				}
+				if ((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) {
+					if (pcpu_has_cap(X86_FEATURE_RDT_A)) {
+						entry.ebx |= CPUID_EBX_RDT_A;
+					}
+					if (pcpu_has_cap(X86_FEATURE_RDT_M)) {
+						entry.ebx |= CPUID_EBX_RDT_M;
+					}
+				}
 				result = set_vcpuid_entry(vm, &entry);
 				break;
 			case 0x12U:
 				result = set_vcpuid_sgx(vm);
+				break;
+			case 0x10U:
+				if ((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) {
+					init_vcpuid_entry(i, 0U, CPUID_CHECK_SUBLEAF, &entry);
+					result = set_vcpuid_entry(vm, &entry);
+					if (entry.ebx & CPUID_EBX_RDT_L3) {
+						init_vcpuid_entry(i, 1U, CPUID_CHECK_SUBLEAF, &entry);
+						result = set_vcpuid_entry(vm, &entry);
+					}
+					if (entry.ebx & CPUID_EBX_RDT_L2) {
+						init_vcpuid_entry(i, 2U, CPUID_CHECK_SUBLEAF, &entry);
+						result = set_vcpuid_entry(vm, &entry);
+					}
+					if (entry.ebx & CPUID_EBX_RDT_MBA) {
+						init_vcpuid_entry(i, 3U, CPUID_CHECK_SUBLEAF, &entry);
+						result = set_vcpuid_entry(vm, &entry);
+					}
+				}
 				break;
 			/* These features are disabled */
 			/* PMU is not supported */
 			case 0x0aU:
 			/* Intel RDT */
 			case 0x0fU:
-			case 0x10U:
 			/* Intel Processor Trace */
 			case 0x14U:
 			/* PCONFIG */

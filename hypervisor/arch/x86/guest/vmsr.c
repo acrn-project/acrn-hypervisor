@@ -343,6 +343,7 @@ static void init_msr_area(struct acrn_vcpu *vcpu)
 void init_msr_emulation(struct acrn_vcpu *vcpu)
 {
 	uint8_t *msr_bitmap = vcpu->arch.msr_bitmap;
+	struct acrn_vm_config *vm_config = get_vm_config(vcpu->vm->vm_id);
 	uint32_t msr, i;
 	uint64_t value64;
 
@@ -360,9 +361,11 @@ void init_msr_emulation(struct acrn_vcpu *vcpu)
 		enable_msr_interception(msr_bitmap, unsupported_msrs[i], INTERCEPT_READ_WRITE);
 	}
 
-	/* RDT-A disabled: CPUID.07H.EBX[12], CPUID.10H */
-	for (msr = MSR_IA32_L3_MASK_BASE; msr < MSR_IA32_BNDCFGS; msr++) {
-		enable_msr_interception(msr_bitmap, msr, INTERCEPT_READ_WRITE);
+	if ((vm_config->guest_flags & GUEST_FLAG_TEE) == 0U) {
+		/* RDT-A disabled: CPUID.07H.EBX[12], CPUID.10H */
+		for (msr = MSR_IA32_L3_MASK_BASE; msr < MSR_IA32_BNDCFGS; msr++) {
+			enable_msr_interception(msr_bitmap, msr, INTERCEPT_READ_WRITE);
+		}
 	}
 
 	/* don't need to intercept rdmsr for these MSRs */
