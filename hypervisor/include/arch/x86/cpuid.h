@@ -80,8 +80,12 @@
 #define CPUID_EBX_SGX           (1U<<2U)
 /* CPUID.07H:EBX.SMEP*/
 #define CPUID_EBX_SMEP          (1U<<7U)
+/* CPUID.07H:EBX.RDT-M */
+#define CPUID_EBX_RDT_M         (1U<<12U)
 /* CPUID.07H:EBX.MPX */
 #define CPUID_EBX_MPX           (1U<<14U)
+/* CPUID.07H:EBX.RDT-A */
+#define CPUID_EBX_RDT_A         (1U<<15U)
 /* CPUID.07H:EBX.SMAP*/
 #define CPUID_EBX_SMAP          (1U<<20U)
 /* CPUID.07H:ECX.UMIP */
@@ -122,6 +126,12 @@
 #define CPUID_ECX_CET_U_STATE   (1U<<11U)
 /* CPUID.0DH.ECX.CET_S_STATE */
 #define CPUID_ECX_CET_S_STATE   (1U<<12U)
+/* CPUID.10H.EBX.RDT_L3 */
+#define CPUID_EBX_RDT_L3	(1U<<1U)
+/* CPUID.10H.EBX.RDT_L2 */
+#define CPUID_EBX_RDT_L2	(1U<<2U)
+/* CPUID.10H.EBX.RDT_MBA */
+#define CPUID_EBX_RDT_MBA	(1U<<3U)
 /* CPUID.12H.EAX.SGX1 */
 #define CPUID_EAX_SGX1          (1U<<0U)
 /* CPUID.12H.EAX.SGX2 */
