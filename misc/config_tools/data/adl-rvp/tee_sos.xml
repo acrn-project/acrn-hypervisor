@@ -17,8 +17,24 @@
         <MULTIBOOT2>y</MULTIBOOT2>
         <ENFORCE_TURNOFF_AC>y</ENFORCE_TURNOFF_AC>
         <RDT>
-            <RDT_ENABLED>n</RDT_ENABLED>
+            <RDT_ENABLED>y</RDT_ENABLED>
             <CDP_ENABLED>n</CDP_ENABLED>
+            <CLOS_MASK>0x3f0</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
+            <CLOS_MASK>0xf</CLOS_MASK>
         </RDT>
         <HYPERV_ENABLED>y</HYPERV_ENABLED>
         <IOMMU_ENFORCE_SNP>n</IOMMU_ENFORCE_SNP>

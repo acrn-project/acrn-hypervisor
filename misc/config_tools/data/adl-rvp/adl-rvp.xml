@@ -232,6 +232,9 @@
 	</TPM_INFO>
 
 	<CLOS_INFO>
+	rdt resources supported: L2
+	rdt resource clos max: 16
+	rdt resource mask max: '0x3ff'
 	</CLOS_INFO>
 
 	<IOMEM_INFO>
