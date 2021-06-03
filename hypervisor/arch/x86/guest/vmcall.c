@@ -179,39 +179,12 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 	struct acrn_vm *vm = vcpu->vm;
 	/* hypercall ID from guest*/
 	uint64_t hypcall_id = vcpu_get_gpreg(vcpu, CPU_REG_R8);
-	struct sched_event *event;
-	struct acrn_vm *tee_vm;
-	struct acrn_vcpu *tee_vcpu;
-	uint16_t tee_cores_nr;
-
-	pr_err("hypercall=0x%lx %s\n", hypcall_id, __func__);
 
 	if (!is_hypercall_from_ring0()) {
 		vcpu_inject_gp(vcpu, 0U);
 		ret = -EACCES;
-	} else if (hypcall_id == HC_TEE_BOOT_DONE) {
-		pr_err("HC_TEE_BOOT_DONE\n");
-		resume_ree_vm();
-		ret = 0;
-	} else if (hypcall_id == HC_NOTIFY_TEE) {
-		pr_err("HC_NOTIFY_TEE\n");
-		tee_cores_nr = (uint16_t)vcpu_get_gpreg(vcpu, CPU_REG_RDI);
-		tee_vm = get_tee_vm();
-		tee_vcpu = vcpu_from_vid(tee_vm, tee_cores_nr);
-		event = &tee_vcpu->events[VCPU_EVENT_VIRTUAL_INTERRUPT];
-		if (event->waiting_thread != NULL) {
-			ret = TEE_SERVICE_ACCEPTED;
-			signal_event(event);
-		}else {
-			ret = TEE_SERVICE_REFUSED;
-		}
-	} else if (hypcall_id == HC_NOTIFY_REE) {
-		pr_err("HC_NOTIFY_REE\n");
-		ret = tee_service_done();
-	} else if (hypcall_id == HC_GET_TEE_CORE_NUM) {
-		pr_err("HC_GET_TEE_CORE_NUM\n");
-		tee_vm = get_tee_vm();
-		ret = tee_vm->hw.created_vcpus;
+	} else if (is_tee_hypercall(hypcall_id)) {
+		ret = handle_tee_hypercalls(vcpu, hypcall_id);
 	} else if (hypcall_id == HC_WORLD_SWITCH) {
 		ret = hcall_world_switch(vcpu);
 	} else if (hypcall_id == HC_INITIALIZE_TRUSTY) {

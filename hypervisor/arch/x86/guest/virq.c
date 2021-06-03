@@ -364,10 +364,6 @@ int32_t acrn_handle_pending_request(struct acrn_vcpu *vcpu)
 	struct acrn_vcpu_arch *arch = &vcpu->arch;
 	uint64_t *pending_req_bits = &arch->pending_req;
 
-	if (bitmap_test_and_clear_lock(ACRN_REQUEST_REE_WAIT, pending_req_bits)) {
-		wait_event(&vcpu->events[VCPU_EVENT_REE_WAIT]);
-	}
-
 	/* make sure ACRN_REQUEST_INIT_VMCS handler as the first one */
 	if (bitmap_test_and_clear_lock(ACRN_REQUEST_INIT_VMCS, pending_req_bits)) {
 		init_vmcs(vcpu);

@@ -9,6 +9,7 @@
 
 #include <types.h>
 #include <acrn_common.h>
+#include <vcpu.h>\
 
 #define TEE_GPA_MAPPING_TO_REE_MEM (64UL * 1024UL * 1024UL * 1024UL)
 
@@ -27,10 +28,8 @@ extern uint8_t *tee_smc_shared_mem;
 #define TEE_SERVICE_ACCEPTED	0x0
 #define TEE_SERVICE_REFUSED	0x1
 
-bool is_tee_vm(const struct acrn_vm *vm);
-void suspend_ree_vm(void);
-void resume_ree_vm(void);
-int32_t tee_service_done(void);
 void reserve_buffer_for_tee_shared_mem(void);
+bool is_tee_hypercall(uint64_t hypcall_id);
+int32_t handle_tee_hypercalls(struct acrn_vcpu *vcpu, uint64_t hypcall_id);
 
 #endif /* TEE_H_ */

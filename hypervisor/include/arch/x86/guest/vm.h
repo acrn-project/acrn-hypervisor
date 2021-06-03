@@ -234,7 +234,7 @@ void resume_vm_from_s3(struct acrn_vm *vm, uint32_t wakeup_vec);
 void start_vm(struct acrn_vm *vm);
 int32_t reset_vm(struct acrn_vm *vm);
 int32_t create_vm(uint16_t vm_id, uint64_t pcpu_bitmap, struct acrn_vm_config *vm_config, struct acrn_vm **rtn_vm);
-void prepare_vm(uint16_t vm_id, struct acrn_vm_config *vm_config);
+void prepare_vm(uint16_t vm_id, struct acrn_vm_config *vm_config, bool start);
 void launch_vms(uint16_t pcpu_id);
 bool is_poweroff_vm(const struct acrn_vm *vm);
 bool is_created_vm(const struct acrn_vm *vm);
@@ -245,8 +245,6 @@ bool is_prelaunched_vm(const struct acrn_vm *vm);
 uint16_t get_vmid_by_uuid(const uint8_t *uuid);
 struct acrn_vm *get_vm_from_vmid(uint16_t vm_id);
 struct acrn_vm *get_sos_vm(void);
-struct acrn_vm *get_ree_vm(void);
-struct acrn_vm *get_tee_vm(void);
 
 void create_sos_vm_e820(struct acrn_vm *vm);
 void create_prelaunched_vm_e820(struct acrn_vm *vm);
