@@ -93,8 +93,10 @@ void create_sos_vm_e820(struct acrn_vm *vm)
 	uint32_t entries_count = get_e820_entries_count();
 	const struct mem_range *p_mem_range_info = get_mem_range_info();
 	struct acrn_vm_config *sos_vm_config = get_vm_config(vm->vm_id);
-	uint64_t tee_shared_mem_start = hva2hpa(tee_smc_shared_mem);
+	uint64_t tee_shared_mem_start = hva2hpa((void *)TEE_SMC_CALL_SHARED_PAGE_GPA);
 	uint64_t tee_shared_mem_end = tee_shared_mem_start + TEE_SMC_CALL_SHARED_PAGE_SIZE;
+	uint64_t tee_sipi_page_start = hva2hpa((void *)TEE_SIPI_PAGE_GPA);
+	uint64_t tee_sipi_page_end = tee_sipi_page_start + TEE_SIPI_PAGE_SIZE;
 
 	(void)memcpy_s((void *)sos_vm_e820, entries_count * sizeof(struct e820_entry),
 			(const void *)get_e820_entry(), entries_count * sizeof(struct e820_entry));
@@ -105,9 +107,15 @@ void create_sos_vm_e820(struct acrn_vm *vm)
 	filter_mem_from_sos_e820(vm, hv_start_pa, hv_end_pa);
 	sos_vm_config->memory.size = p_mem_range_info->total_mem_size - CONFIG_HV_RAM_SIZE;
 
-	/* filter out the TEE shared memory */
-	filter_mem_from_sos_e820(vm, tee_shared_mem_start, tee_shared_mem_end);
-	sos_vm_config->memory.size -= TEE_SMC_CALL_SHARED_PAGE_SIZE;
+	if ((sos_vm_config->guest_flags & GUEST_FLAG_REE) != 0U) {
+		/* filter out the TEE shared memory */
+		filter_mem_from_sos_e820(vm, tee_shared_mem_start, tee_shared_mem_end);
+		sos_vm_config->memory.size -= TEE_SMC_CALL_SHARED_PAGE_SIZE;
+
+		/* filter out the TEE reserved memory for SIPI */
+		filter_mem_from_sos_e820(vm, tee_sipi_page_start, tee_sipi_page_end);
+		sos_vm_config->memory.size -= TEE_SIPI_PAGE_SIZE;
+	}
 
 	/* filter out prelaunched vm memory from e820 table */
 	for (vm_id = 0U; vm_id < CONFIG_MAX_VM_NUM; vm_id++) {

@@ -12,8 +12,6 @@
 #include <errno.h>
 #include <tee.h>
 
-uint8_t *tee_smc_shared_mem;
-
 static struct acrn_vm *get_tee_vm(uint64_t flags)
 {
 	uint16_t vm_id;
@@ -31,17 +29,13 @@ static struct acrn_vm *get_tee_vm(uint64_t flags)
 
 static int32_t tee_boot_done(void)
 {
-	//struct acrn_vm_config *vm_config;
 	struct acrn_vm *ree_vm;
 
 	ree_vm = get_tee_vm(GUEST_FLAG_REE);
-	//vm_config = get_vm_config(ree_vm->vm_id);
-	pr_err("ree_vm->vm_id=%u\n", ree_vm->vm_id);
-
 	while (is_created_vm(ree_vm)) {
 		start_vm(ree_vm);
 	}
-	pr_err("tee_boot_done");
+
 	return 0;
 }
 
@@ -86,15 +80,6 @@ static int32_t get_tee_core_num(void)
 
 	tee_vm = get_tee_vm(GUEST_FLAG_TEE);
 	return tee_vm->hw.created_vcpus;
-}
-
-void reserve_buffer_for_tee_shared_mem(void)
-{
-	uint64_t base;
-
-	base = e820_alloc_memory(TEE_SMC_CALL_SHARED_PAGE_SIZE, ~0UL);
-
-	tee_smc_shared_mem = (uint8_t *)base;
 }
 
 bool is_tee_hypercall(uint64_t hypcall_id)

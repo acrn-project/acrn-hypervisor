@@ -2,7 +2,7 @@
 
 if [ $# -eq 0 ];
 then
-  target=tee
+  target=tee_sos
 else
   target=$1
 fi

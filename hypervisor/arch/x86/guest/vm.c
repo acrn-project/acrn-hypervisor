@@ -232,8 +232,6 @@ static void prepare_prelaunched_vm_memmap(struct acrn_vm *vm, const struct acrn_
 	bool is_hpa1 = true;
 	uint64_t base_hpa = vm_config->memory.start_hpa;
 	uint64_t remaining_hpa_size = vm_config->memory.size;
-	uint64_t ree_hpa = vm_config->memory.ree_start_hpa;
-	uint64_t ree_size = vm_config->memory.ree_size;
 	uint32_t i;
 
 	for (i = 0U; i < vm->e820_entry_num; i++) {
@@ -278,21 +276,6 @@ static void prepare_prelaunched_vm_memmap(struct acrn_vm *vm, const struct acrn_
 			base_hpa = vm_config->memory.start_hpa2;
 			remaining_hpa_size = vm_config->memory.size_hpa2;
 		}
-	}
-
-	/* For TEE VM, mapping the REE VM memory to its GPA starts from 64G */
-	if ((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) {
-		ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp,
-			ree_hpa, TEE_GPA_MAPPING_TO_REE_MEM, ree_size,
-			EPT_WB | EPT_RD);
-	}
-
-	if (((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) ||
-	    ((vm_config->guest_flags & GUEST_FLAG_REE) != 0U)) {
-		/* Map the 2M shared memory for TEE/REE, start from: GPA 4G - 2M, size: 2M */
-		ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp, hva2hpa(tee_smc_shared_mem),
-			   TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE,
-			   EPT_RWX | EPT_WB);
 	}
 
 	for (i = 0U; i < MAX_MMIO_DEV_NUM; i++) {
@@ -463,11 +446,22 @@ static void prepare_sos_vm_memmap(struct acrn_vm *vm)
 #endif
 
 	if ((vm_config->guest_flags & GUEST_FLAG_REE) != 0U) {
-		ept_del_mr(vm, pml4_page, TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE);
-		/* Map the 2M shared memory for REE, start from: GPA 4G - 2M, size: 2M */
-		ept_add_mr(vm, pml4_page, hva2hpa(tee_smc_shared_mem),
-			   TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE,
-			   EPT_RWX | EPT_WB);
+		ept_del_mr(vm, pml4_page, TEE_SIPI_PAGE_GPA, TEE_SIPI_PAGE_SIZE);
+	}
+}
+
+static void prepare_tee_vm_memmap(struct acrn_vm *vm, const struct acrn_vm_config *vm_config)
+{
+	uint64_t start_hpa = vm_config->memory.start_hpa;
+	uint64_t start_hpa_size = vm_config->memory.size;
+
+	/* For TEE VM, mapping the REE VM memory to it */
+	if ((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) {
+		prepare_sos_vm_memmap(vm);
+
+		ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp,
+			   start_hpa, start_hpa, start_hpa_size,
+			   EPT_WB | EPT_RWX);
 	}
 }
 
@@ -559,7 +553,11 @@ int32_t create_vm(uint16_t vm_id, uint64_t pcpu_bitmap, struct acrn_vm_config *v
 
 		if (vm_config->load_order == PRE_LAUNCHED_VM) {
 			create_prelaunched_vm_e820(vm);
-			prepare_prelaunched_vm_memmap(vm, vm_config);
+			if ((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) {
+				prepare_tee_vm_memmap(vm, vm_config);
+			} else {
+				prepare_prelaunched_vm_memmap(vm, vm_config);
+			}
 			status = init_vm_boot_info(vm);
 		}
 	}

@@ -26,8 +26,6 @@ struct acrn_vm_config vm_configs[CONFIG_MAX_VM_NUM] = {
 			.size = VM0_CONFIG_MEM_SIZE,
 			.start_hpa2 = VM0_CONFIG_MEM_START_HPA2,
 			.size_hpa2 = VM0_CONFIG_MEM_SIZE_HPA2,
-			.ree_start_hpa = 0UL,
-			.ree_size = CONFIG_SOS_RAM_SIZE,
 		},
 		.os_config = {
 			.name = "Tee",
