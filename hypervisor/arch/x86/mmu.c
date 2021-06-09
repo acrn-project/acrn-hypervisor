@@ -49,9 +49,15 @@ static uint8_t sanitized_page[PAGE_SIZE] __aligned(PAGE_SIZE);
 #define PPT_PD_PAGE_NUM	(PD_PAGE_NUM(CONFIG_PLATFORM_RAM_SIZE + (MEM_4G)) + \
 			CONFIG_MAX_PCI_DEV_NUM * 6U)
 #define PPT_PT_PAGE_NUM	0UL	/* not support 4K granularity page mapping */
+
+#ifdef CONFIG_X86_TEE
+#define PPT_PAGE_NUM 64U
+#else
 /* must be a multiple of 64 */
 #define PPT_PAGE_NUM	(roundup((PPT_PML4_PAGE_NUM + PPT_PDPT_PAGE_NUM + \
 			PPT_PD_PAGE_NUM + PPT_PT_PAGE_NUM), 64U))
+#endif
+
 static struct page ppt_pages[PPT_PAGE_NUM];
 static uint64_t ppt_page_bitmap[PPT_PAGE_NUM / 64];
 
