@@ -454,6 +454,14 @@ static void prepare_sos_vm_memmap(struct acrn_vm *vm)
 	    (get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_TEE) != 0U) {
 		ept_modify_mr(vm, pml4_page, TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE, EPT_WB, EPT_MT_MASK);
 	}
+
+	/* FIXME: consider a better way to avoid the SIPI's start-up routine
+	 * address(within 1MB) met conflict after keep identical mapping for
+	 * both REE and TEE.
+	 */
+	if ((get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_REE) != 0U) {
+		ept_del_mr(vm, pml4_page, TEE_SIPI_PAGE_GPA, TEE_SIPI_PAGE_SIZE);
+	}
 }
 
 /* TODO: Can this move into tee.c ? */
