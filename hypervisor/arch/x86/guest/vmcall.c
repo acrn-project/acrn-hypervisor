@@ -13,6 +13,7 @@
 #include <hypercall.h>
 #include <trace.h>
 #include <logmsg.h>
+#include <tee.h>
 
 struct hc_dispatch {
 	/* handler(struct acrn_vm *sos_vm, struct acrn_vm *target_vm, uint64_t param1, uint64_t param2) */
@@ -182,6 +183,8 @@ int32_t vmcall_vmexit_handler(struct acrn_vcpu *vcpu)
 	if (!is_hypercall_from_ring0()) {
 		vcpu_inject_gp(vcpu, 0U);
 		ret = -EACCES;
+	} else if (is_tee_hypercall(hypcall_id)) {
+		ret = handle_tee_hypercalls(vcpu, hypcall_id);
 	} else if (hypcall_id == HC_WORLD_SWITCH) {
 		ret = hcall_world_switch(vcpu);
 	} else if (hypcall_id == HC_INITIALIZE_TRUSTY) {

@@ -906,7 +906,7 @@ void resume_vm_from_s3(struct acrn_vm *vm, uint32_t wakeup_vec)
  *
  * @pre vm_id < CONFIG_MAX_VM_NUM && vm_config != NULL
  */
-void prepare_vm(uint16_t vm_id, struct acrn_vm_config *vm_config)
+void prepare_vm(uint16_t vm_id, struct acrn_vm_config *vm_config, bool start)
 {
 	int32_t err = 0;
 	struct acrn_vm *vm = NULL;
@@ -921,10 +921,12 @@ void prepare_vm(uint16_t vm_id, struct acrn_vm_config *vm_config)
 
 		(void)vm_sw_loader(vm);
 
-		/* start vm BSP automatically */
-		start_vm(vm);
+		if (start) {
+			/* start vm BSP automatically */
+			start_vm(vm);
 
-		pr_acrnlog("Start VM id: %x name: %s", vm_id, vm_config->name);
+			pr_acrnlog("Start VM id: %x name: %s", vm_id, vm_config->name);
+		}
 	}
 }
 
@@ -944,7 +946,16 @@ void launch_vms(uint16_t pcpu_id)
 				if (vm_config->load_order == SOS_VM) {
 					sos_vm_ptr = &vm_array[vm_id];
 				}
-				prepare_vm(vm_id, vm_config);
+
+				/*
+				 * Only start non REE VM, REE will be started when
+				 * get TEE notification.
+				 */
+				if ((vm_config->guest_flags & GUEST_FLAG_REE) == 0U) {
+					prepare_vm(vm_id, vm_config, true);
+				} else {
+					prepare_vm(vm_id, vm_config, false);
+				}
 			}
 		}
 	}
