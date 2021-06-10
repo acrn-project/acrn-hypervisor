@@ -36,6 +36,7 @@
 #include <assign.h>
 #include <vgpio.h>
 #include <rtcm.h>
+#include <tee.h>
 
 /* Local variables */
 
@@ -382,6 +383,11 @@ static void prepare_sos_vm_memmap(struct acrn_vm *vm)
 	ept_add_mr(vm, pml4_page, p_mem_range_info->mem_bottom, p_mem_range_info->mem_bottom,
 			(p_mem_range_info->mem_top - p_mem_range_info->mem_bottom), attr_uc);
 
+	if ((get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_TEE) != 0U) {
+		entries_count = get_sos_vm()->e820_entry_num;
+		p_e820 = get_sos_vm()->e820_entries;
+	}
+
 	/* update ram entries to WB attr */
 	for (i = 0U; i < entries_count; i++) {
 		entry = p_e820 + i;
@@ -443,6 +449,28 @@ static void prepare_sos_vm_memmap(struct acrn_vm *vm)
 	 */
 	ept_del_mr(vm, pml4_page, PRE_RTVM_SW_SRAM_BASE_GPA, PRE_RTVM_SW_SRAM_END_GPA - PRE_RTVM_SW_SRAM_BASE_GPA);
 #endif
+
+	if ((get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_REE) != 0U ||
+	    (get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_TEE) != 0U) {
+		ept_modify_mr(vm, pml4_page, TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE, EPT_WB, EPT_MT_MASK);
+	}
+}
+
+/* TODO: Can this move into tee.c ? */
+static void prepare_tee_vm_memmap(struct acrn_vm *vm, const struct acrn_vm_config *vm_config)
+{
+	uint64_t start_hpa = vm_config->memory.start_hpa;
+	uint64_t start_hpa_size = vm_config->memory.size;
+
+	/* For TEE VM, mapping the REE VM memory to it */
+	if ((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) {
+		/* TODO: decouple the way of SOS booting and SOS. */
+		prepare_sos_vm_memmap(vm);
+
+		ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp,
+			   start_hpa, start_hpa, start_hpa_size,
+			   EPT_WB | EPT_RWX);
+	}
 }
 
 /* Add EPT mapping of EPC reource for the VM */
@@ -533,7 +561,11 @@ int32_t create_vm(uint16_t vm_id, uint64_t pcpu_bitmap, struct acrn_vm_config *v
 
 		if (vm_config->load_order == PRE_LAUNCHED_VM) {
 			create_prelaunched_vm_e820(vm);
-			prepare_prelaunched_vm_memmap(vm, vm_config);
+			if ((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) {
+				prepare_tee_vm_memmap(vm, vm_config);
+			} else {
+				prepare_prelaunched_vm_memmap(vm, vm_config);
+			}
 			status = init_vm_boot_info(vm);
 		}
 	}

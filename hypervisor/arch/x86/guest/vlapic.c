@@ -2223,12 +2223,13 @@ int32_t vlapic_x2apic_write(struct acrn_vcpu *vcpu, uint32_t msr, uint64_t val)
 void vlapic_create(struct acrn_vcpu *vcpu, uint16_t pcpu_id)
 {
 	struct acrn_vlapic *vlapic = vcpu_vlapic(vcpu);
+	struct acrn_vm_config *vm_config = get_vm_config(vcpu->vm->vm_id);
 
 	if (is_vcpu_bsp(vcpu)) {
 		uint64_t *pml4_page =
 			(uint64_t *)vcpu->vm->arch_vm.nworld_eptp;
 		/* only need unmap it from SOS as UOS never mapped it */
-		if (is_sos_vm(vcpu->vm)) {
+		if (is_sos_vm(vcpu->vm) || ((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U)) {
 			ept_del_mr(vcpu->vm, pml4_page,
 				DEFAULT_APIC_BASE, PAGE_SIZE);
 		}
