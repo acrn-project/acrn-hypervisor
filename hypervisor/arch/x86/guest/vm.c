@@ -445,7 +445,7 @@ static void prepare_sos_vm_memmap(struct acrn_vm *vm)
 	ept_del_mr(vm, pml4_page, PRE_RTVM_SW_SRAM_BASE_GPA, PRE_RTVM_SW_SRAM_END_GPA - PRE_RTVM_SW_SRAM_BASE_GPA);
 #endif
 
-	if ((vm_config->guest_flags & GUEST_FLAG_REE) != 0U) {
+	if ((get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_REE) != 0U) {
 		ept_del_mr(vm, pml4_page, TEE_SIPI_PAGE_GPA, TEE_SIPI_PAGE_SIZE);
 	}
 }
