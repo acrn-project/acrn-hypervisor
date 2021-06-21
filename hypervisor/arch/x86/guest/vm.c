@@ -383,6 +383,11 @@ static void prepare_sos_vm_memmap(struct acrn_vm *vm)
 	ept_add_mr(vm, pml4_page, p_mem_range_info->mem_bottom, p_mem_range_info->mem_bottom,
 			(p_mem_range_info->mem_top - p_mem_range_info->mem_bottom), attr_uc);
 
+	if ((get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_TEE) != 0U) {
+		entries_count = get_sos_vm()->e820_entry_num;
+		p_e820 = get_sos_vm()->e820_entries;
+	}
+
 	/* update ram entries to WB attr */
 	for (i = 0U; i < entries_count; i++) {
 		entry = p_e820 + i;
@@ -444,6 +449,13 @@ static void prepare_sos_vm_memmap(struct acrn_vm *vm)
 	 */
 	ept_del_mr(vm, pml4_page, PRE_RTVM_SW_SRAM_BASE_GPA, PRE_RTVM_SW_SRAM_END_GPA - PRE_RTVM_SW_SRAM_BASE_GPA);
 #endif
+
+	if ((get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_REE) != 0U ||
+	    (get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_TEE) != 0U) {
+		ept_del_mr(vm, pml4_page, TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE);
+		ept_add_mr(vm, pml4_page, TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_GPA,
+			   TEE_SMC_CALL_SHARED_PAGE_SIZE, EPT_WB | EPT_RWX);
+	}
 
 	if ((get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_REE) != 0U) {
 		ept_del_mr(vm, pml4_page, TEE_SIPI_PAGE_GPA, TEE_SIPI_PAGE_SIZE);
