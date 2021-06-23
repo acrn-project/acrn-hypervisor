@@ -31,8 +31,8 @@ struct acrn_vm_config vm_configs[CONFIG_MAX_VM_NUM] = {
 			.name = "Tee",
 			.kernel_type = KERNEL_TEE,
 			.kernel_mod_tag = "Tee_RawImage",
-			.kernel_load_addr = 0x12951000,
-			.kernel_entry_addr = 0x12951000,
+			.kernel_load_addr = 0x21000000,
+			.kernel_entry_addr = 0x21000000,
 			.bootargs = VM0_BOOT_ARGS,
 		},
 		.acpi_config = {

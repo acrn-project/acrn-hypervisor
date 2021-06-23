@@ -11,8 +11,8 @@
 #include <acrn_common.h>
 #include <vcpu.h>
 
-/* Shared memory for TEE/REE, starts from: GPA 0x18000000, size: 2M */
-#define TEE_SMC_CALL_SHARED_PAGE_GPA 0x18000000UL
+/* Shared memory for TEE/REE, starts from: GPA 0x3FE00000, size: 2M */
+#define TEE_SMC_CALL_SHARED_PAGE_GPA 0x3FE00000UL
 #define TEE_SMC_CALL_SHARED_PAGE_SIZE (2UL * 1024UL * 1024UL)
 
 /* Reserved memory for TEE */
