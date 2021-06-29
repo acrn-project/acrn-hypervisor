@@ -379,6 +379,10 @@ static void prepare_sos_vm_memmap(struct acrn_vm *vm)
 	pr_dbg("sos_vm: bottom memory - 0x%lx, top memory - 0x%lx\n",
 		p_mem_range_info->mem_bottom, p_mem_range_info->mem_top);
 
+	if ((get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_TEE) != 0U) {
+		attr_uc = (EPT_RD | EPT_WR | EPT_UNCACHED);
+	}
+
 	/* create real ept map for all ranges with UC */
 	ept_add_mr(vm, pml4_page, p_mem_range_info->mem_bottom, p_mem_range_info->mem_bottom,
 			(p_mem_range_info->mem_top - p_mem_range_info->mem_bottom), attr_uc);
@@ -452,10 +456,11 @@ static void prepare_sos_vm_memmap(struct acrn_vm *vm)
 
 	if ((get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_REE) != 0U ||
 	    (get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_TEE) != 0U) {
+		/* Update shared memory entries to WB attr */
 		ept_modify_mr(vm, pml4_page, TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE, EPT_WB, EPT_MT_MASK);
-	}
-
-	if ((get_vm_config(vm->vm_id)->guest_flags & GUEST_FLAG_REE) != 0U) {
+		/* Remove the executable permission of shared memory */
+		ept_modify_mr(vm, pml4_page, TEE_SMC_CALL_SHARED_PAGE_GPA, TEE_SMC_CALL_SHARED_PAGE_SIZE, 0UL, EPT_EXE);
+		/* Remove the SIPI PAGE for TEE */
 		ept_del_mr(vm, pml4_page, TEE_SIPI_PAGE_GPA, TEE_SIPI_PAGE_SIZE);
 	}
 }
@@ -468,6 +473,10 @@ static void prepare_tee_vm_memmap(struct acrn_vm *vm, const struct acrn_vm_confi
 	/* For TEE VM, mapping the REE VM memory to it */
 	if ((vm_config->guest_flags & GUEST_FLAG_TEE) != 0U) {
 		prepare_sos_vm_memmap(vm);
+
+		ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp,
+			   TEE_SIPI_PAGE_GPA, TEE_SIPI_PAGE_GPA,
+			   TEE_SIPI_PAGE_SIZE, EPT_WB | EPT_RWX);
 
 		ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp,
 			   start_hpa, start_hpa, start_hpa_size,
