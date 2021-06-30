@@ -104,18 +104,25 @@ int32_t handle_tee_hypercalls(struct acrn_vcpu *vcpu, uint64_t hypcall_id)
 
 	pr_err("hypercall=0x%lx %s\n", hypcall_id, __func__);
 
-	if (hypcall_id == HC_TEE_BOOT_DONE) {
-		pr_err("HC_TEE_BOOT_DONE\n");
-		ret = tee_boot_done();
-	} else if (hypcall_id == HC_NOTIFY_TEE) {
-		pr_err("HC_NOTIFY_TEE\n");
-		ret = ree_notify_tee(vcpu);
-	} else if (hypcall_id == HC_NOTIFY_REE) {
-		pr_err("HC_NOTIFY_REE\n");
-		ret = tee_notify_ree();
-	} else if (hypcall_id == HC_GET_TEE_CORE_NUM) {
+	/* Hypercall for Both REE and TEE */
+	if (hypcall_id == HC_GET_TEE_CORE_NUM) {
 		pr_err("HC_GET_TEE_CORE_NUM\n");
 		ret = get_tee_core_num();
+	/* Hypercall only for TEE */
+	} else if ((get_vm_config(vcpu->vm->vm_id)->guest_flags & GUEST_FLAG_TEE) != 0U) {
+		if (hypcall_id == HC_TEE_BOOT_DONE) {
+			pr_err("HC_TEE_BOOT_DONE\n");
+			ret = tee_boot_done();
+		} else if (hypcall_id == HC_NOTIFY_REE) {
+			pr_err("HC_NOTIFY_REE\n");
+			ret = tee_notify_ree();
+		}
+	/* Hypercall only for REE */
+	} else if ((get_vm_config(vcpu->vm->vm_id)->guest_flags & GUEST_FLAG_REE) != 0U) {
+		if (hypcall_id == HC_NOTIFY_TEE) {
+			pr_err("HC_NOTIFY_TEE\n");
+			ret = ree_notify_tee(vcpu);
+		}
 	}
 
 	return ret;
