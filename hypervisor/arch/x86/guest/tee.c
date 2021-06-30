@@ -102,14 +102,21 @@ int32_t handle_tee_hypercalls(struct acrn_vcpu *vcpu, uint64_t hypcall_id)
 {
 	int32_t ret = -EINVAL;
 
-	if (hypcall_id == HC_TEE_BOOT_DONE) {
-		ret = tee_boot_done();
-	} else if (hypcall_id == HC_NOTIFY_TEE) {
-		ret = ree_notify_tee(vcpu);
-	} else if (hypcall_id == HC_NOTIFY_REE) {
-		ret = tee_notify_ree();
-	} else if (hypcall_id == HC_GET_TEE_CORE_NUM) {
+	/* Hypercall for Both REE and TEE */
+	if (hypcall_id == HC_GET_TEE_CORE_NUM) {
 		ret = get_tee_core_num();
+	/* Hypercall only for TEE */
+	} else if ((get_vm_config(vcpu->vm->vm_id)->guest_flags & GUEST_FLAG_TEE) != 0U) {
+		if (hypcall_id == HC_TEE_BOOT_DONE) {
+			ret = tee_boot_done();
+		} else if (hypcall_id == HC_NOTIFY_REE) {
+			ret = tee_notify_ree();
+		}
+	/* Hypercall only for REE */
+	} else if ((get_vm_config(vcpu->vm->vm_id)->guest_flags & GUEST_FLAG_REE) != 0U) {
+		if (hypcall_id == HC_NOTIFY_TEE) {
+			ret = ree_notify_tee(vcpu);
+		}
 	}
 
 	return ret;
