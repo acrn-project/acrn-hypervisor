@@ -45,17 +45,21 @@ static int32_t ree_notify_tee(struct acrn_vcpu *vcpu)
 	struct acrn_vm *tee_vm;
 	struct acrn_vcpu *tee_vcpu;
 	uint16_t tee_cores_nr;
-	int32_t ret;
+	int32_t ret = TEE_SERVICE_REFUSED;
 
 	tee_cores_nr = (uint16_t)vcpu_get_gpreg(vcpu, CPU_REG_RDI);
 	tee_vm = get_tee_vm(GUEST_FLAG_TEE);
-	tee_vcpu = vcpu_from_vid(tee_vm, tee_cores_nr);
-	event = &tee_vcpu->events[VCPU_EVENT_VIRTUAL_INTERRUPT];
-	if (event->waiting_thread != NULL) {
-		ret = TEE_SERVICE_ACCEPTED;
-		signal_event(event);
+	if (tee_cores_nr >= tee_vm->hw.created_vcpus ) {
+		pr_fatal("%s: No cpu(%d) in TEE.\n", __func__, tee_cores_nr);
 	} else {
-		ret = TEE_SERVICE_REFUSED;
+		tee_vcpu = vcpu_from_vid(tee_vm, tee_cores_nr);
+		event = &tee_vcpu->events[VCPU_EVENT_VIRTUAL_INTERRUPT];
+		if (event->waiting_thread != NULL) {
+			ret = TEE_SERVICE_ACCEPTED;
+			signal_event(event);
+		} else {
+			ret = TEE_SERVICE_REFUSED;
+		}
 	}
 
 	return ret;
