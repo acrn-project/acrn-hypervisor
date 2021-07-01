@@ -79,7 +79,7 @@
 	Region 0: Memory at 50400000 (32-bit, non-prefetchable) [size=4K]
 	00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (16) I219-V
 	Region 0: Memory at 88300000 (32-bit, non-prefetchable) [disabled] [size=128K]
-	01:00.0 Non-Volatile memory controller: Intel Corporation SSD Pro 7600p/760p/E 6100p Series (rev 03)
+	01:00.0 Non-Volatile memory controller: Phison Electronics Corporation E12 NVMe Controller (rev 01)
 	Region 0: Memory at 88200000 (64-bit, non-prefetchable) [size=16K]
 	</PCI_DEVICE>
 
@@ -115,12 +115,12 @@
 	00:1f.4 0c05: 8086:51a3
 	00:1f.5 0c80: 8086:51a4
 	00:1f.6 0200: 8086:1a1f
-	01:00.0 0108: 8086:f1a6 (rev 03)
+	01:00.0 0108: 1987:5012 (rev 01)
 	</PCI_VID_PID>
 
 	<WAKE_VECTOR_INFO>
-	#define WAKE_VECTOR_32          0x46A6600CUL
-	#define WAKE_VECTOR_64          0x46A66018UL
+	#define WAKE_VECTOR_32          0x46A5600CUL
+	#define WAKE_VECTOR_64          0x46A56018UL
 	</WAKE_VECTOR_INFO>
 
 	<RESET_REGISTER_INFO>
@@ -214,7 +214,7 @@
 	</CX_INFO>
 
 	<PX_INFO>
-	{0x321UL, 0x00UL, 0x0AUL, 0x0AUL, 0x001800UL, 0x001800UL},	/* P0 */
+	{0x321UL, 0x00UL, 0x0AUL, 0x0AUL, 0x002800UL, 0x002800UL},	/* P0 */
 	{0x320UL, 0x00UL, 0x0AUL, 0x0AUL, 0x000800UL, 0x000800UL},	/* P1 */
 	{0x2BCUL, 0x00UL, 0x0AUL, 0x0AUL, 0x000700UL, 0x000700UL},	/* P2 */
 	{0x258UL, 0x00UL, 0x0AUL, 0x0AUL, 0x000600UL, 0x000600UL},	/* P3 */
@@ -243,11 +243,10 @@
 	0009f000-000fffff : Reserved
 	  000a0000-000bffff : PCI Bus 0000:00
 	  000f0000-000fffff : System ROM
-	00100000-40acefff : System RAM
-	40acf000-40acffff : Reserved
-	40ad0000-4368efff : System RAM
-	4368f000-436f7fff : Unknown E820 type
-	436f8000-469fdfff : Reserved
+	00100000-40b0dfff : System RAM
+	40b0e000-40b0efff : Reserved
+	40b0f000-4368efff : System RAM
+	4368f000-469fdfff : Reserved
 	469fe000-46ae5fff : ACPI Non-volatile Storage
 	46ae6000-46bfefff : ACPI Tables
 	46bff000-46bfffff : System RAM
@@ -291,9 +290,9 @@
 	  fee00000-fee00fff : Local APIC
 	ff000000-ffffffff : Reserved
 	100000000-4afbfffff : System RAM
-	  3eb600000-3ec6011f0 : Kernel code
-	  3ec6011f1-3ecfeb2ff : Kernel data
-	  3ed6d8000-3eddfffff : Kernel bss
+	  371400000-3724011e0 : Kernel code
+	  3724011e1-372bb247f : Kernel data
+	  373225000-3737fffff : Kernel bss
 	4afc00000-4afffffff : RAM buffer
 	4000000000-7fffffffff : PCI Bus 0000:00
 	  4000000000-400fffffff : 0000:00:02.0
@@ -336,6 +335,7 @@
 	<BLOCK_DEVICE_INFO>
 	/dev/nvme0n1p3: TYPE="ext4"
 	/dev/sda3: TYPE="ext4"
+	/dev/sda4: TYPE="ext4"
 	</BLOCK_DEVICE_INFO>
 
 	<TTYS_INFO>
@@ -347,11 +347,11 @@
 	</AVAILABLE_IRQ_INFO>
 
 	<TOTAL_MEM_INFO>
-	16176448 kB
+	16179992 kB
 	</TOTAL_MEM_INFO>
 
 	<CPU_PROCESSOR_INFO>
-	0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
 	</CPU_PROCESSOR_INFO>
 
 	<MAX_MSIX_TABLE_NUM>
